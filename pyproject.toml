@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "friendlynaiveapplicationsuite"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pandas = "^1.2.0"
+requests = "^2.25.1"
+numpy = "^1.19.5"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
