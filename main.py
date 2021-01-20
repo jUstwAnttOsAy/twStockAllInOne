@@ -1,59 +1,85 @@
-import pandas as pd
 import datetime
 import time
-from ldbydate import crawl_price_date
-from peratio import crawl_peratio_date
-from revenue import crawl_revenue_last
 
-allow_max_errors_count = 5
-erros_count = 0
-has_data = False
+from day import peratio
+from day import price
+from month import revenue
+from season import financial
 
-# 抓最後一天資料(基本資料+營收)
+hasped = hasprd = hasrevenue = hasfin = False
+max_error_times = 5
 
-# for Daily
-date = datetime.datetime.now()
-while has_data==False and erros_count<=allow_max_errors_count:
-  try:
-    print('daily:', date.strftime('%Y/%m/%d......'))
-    pricedata = crawl_price_date(date)
-    time.sleep(5)
-    peratio = crawl_peratio_date(date)
-    time.sleep(5)
+dataDate = datetime.date.today()
+error_times = 0
+while (hasped == False and error_times < max_error_times):
+    try:
+        time.sleep(10)
+        dfped = peratio.peratio_date(dataDate)
+        if (dfped.empty):
+            raise ValueError('no data')
+        else:
+            hasped = True
+            print('P/E Ratio: ', dataDate.strftime("%Y/%m/%d"), 'Success!')
+    except BaseException:
+        print('P/E Ratio: ', dataDate.strftime("%Y/%m/%d"), 'Failed!')
+        error_times = error_times + 1
+        dataDate = dataDate - datetime.timedelta(days=1)
+        continue
 
-    if pricedata.empty or peratio.empty:
-      raise ValueError('no data')
+dataDate = datetime.date.today()
+error_times = 0
+while (hasprd == False and error_times < max_error_times):
+    try:
+        time.sleep(10)
+        dfprd = price.price_date(dataDate)
+        if (dfprd.empty):
+            raise ValueError('no data')
+        else:
+            hasprd = True
+            print('Price Ratio: ', dataDate.strftime("%Y/%m/%d"), 'Success!')
+    except BaseException:
+        print('Price Ratio: ', dataDate.strftime("%Y/%m/%d"), 'Failed!')
+        error_times = error_times + 1
+        dataDate = dataDate - datetime.timedelta(days=1)
+        continue
 
-    has_data = True
-    print('Loaded!')
-  except:
-    print('failed!')
-    date = date - datetime.timedelta(days=1)
-    erros_count = erros_count+1
+dataDate = datetime.date.today()
+error_times = 0
+while (hasrevenue == False and error_times < max_error_times):
+    try:
+        time.sleep(10)
+        dfrevenue = revenue.revneue_statement_all(
+            str(dataDate.year), str(dataDate.month))
+        if (dfrevenue.empty):
+            raise ValueError('no data')
+        else:
+            hasrevenue = True
+            print('Revenue: ', dataDate.strftime("%Y/%m/%d"), 'Success!')
+    except BaseException:
+        print('Revenue: ', dataDate.strftime("%Y/%m/%d"), 'Failed!')
+        error_times = error_times + 1
+        dataDate = datetime(
+            dataDate.year - 1 if dataDate.month == 1 else dataDate.year,
+            12 if dataDate.month == 1 else dataDate.month - 1, 1)
+        continue
 
-#for Month
-erros_count = 0
-has_data = False
-while(has_data == False) and erros_count<=allow_max_errors_count:
-  try:
-    print('month:', date, '......')
-    revenue = crawl_revenue_last(date)
-    time.sleep(5)
-
-    if revenue.empty:
-      raise ValueError('no data')
-
-    has_data = True
-    print('Loaded!')
-  except ValueError:
-    print('failed!')
-    date = datetime.datetime(date.year-(1 if date.month == 1 else 0),(12 if date.month == 1 else date.month-1), 1)
-    erros_count = erros_count+1
-
-
-if pricedata.empty==False and peratio.empty==False and revenue.empty==False:
-  data=pd.merge(pricedata, peratio, how="left", on=["證券代號"])
-  data=pd.merge(data, revenue, how="left", left_on='證券代號', right_on='公司代號')
-  data.set_index("證券代號" , inplace=True)
-else:
-  print('no data to show(connection aborted?)')
+dataDate = datetime.date.today()
+error_times = 0
+while (hasfin == False and error_times < max_error_times):
+    try:
+        time.sleep(10)
+        dffin = financial.financial_statement_all(
+            str(dataDate.year), str(round(dataDate.month / 4, 0) + 1))
+        if (dffin.empty):
+            raise ValueError('no data')
+        else:
+            hasfin = True
+            print('Financial: ', dataDate.strftime("%Y/%m/%d"), 'Success!')
+    except BaseException:
+        print('Financial: ', dataDate.strftime("%Y/%m/%d"), 'Failed!')
+        error_times = error_times + 1
+        dataDate = datetime(
+            dataDate.year - 1 if 1 <= dataDate.month <= 3 else dataDate.year,
+            10 if 1 <= dataDate.month <= 3 else 7 if 10 <= dataDate.month <= 12
+            else 4 if 7 <= dataDate.month <= 9 else 1, 1)
+        continue
