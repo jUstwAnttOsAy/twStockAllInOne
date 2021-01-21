@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 
+
 def getPiotroskiFScore(year, code):
     df = loadDataAll(code, 'Y')
     fyear = str(year)
@@ -10,11 +11,13 @@ def getPiotroskiFScore(year, code):
     else:
         print(f'Out of Range({str(year-1)}-{str(year)})')
 
+
 def getPiotroskiFScoreByLastYear(code):
     df = loadDataAll(code, 'Y')
     fyear = df.index[0]
     lastyear = df.index[1]
     return getFScore(df.loc[fyear], df.loc[lastyear])
+
 
 def getPiotroskiFScoreByLast4Q(code):
     df = loadDataAll(code, 'Q')
@@ -22,10 +25,16 @@ def getPiotroskiFScoreByLast4Q(code):
     Q2 = df.index[1]
     Q3 = df.index[2]
     Q4 = df.index[3]
-    Q5 = df.index[4]
-    totalScore = getFScore(df.loc[Q1], df.loc[Q2])+getFScore(df.loc[Q2], df.loc[Q3])+getFScore(df.loc[Q3], df.loc[Q4])+getFScore(df.loc[Q4], df.loc[Q5])
+    lastQ1 = df.index[4]
+    lastQ2 = df.index[5]
+    lastQ3 = df.index[6]
+    lastQ4 = df.index[7]
+    totalScore = getFScore(df.loc[Q1], df.loc[lastQ1])+getFScore(df.loc[Q2], df.loc[lastQ2]) + \
+        getFScore(df.loc[Q3], df.loc[lastQ3]) + \
+        getFScore(df.loc[Q4], df.loc[lastQ4])
 
     return int(round(totalScore/4, 0))
+
 
 def getFScore(lsthis, lslast):
     factor = []
@@ -54,6 +63,7 @@ def getFScore(lsthis, lslast):
     factor.append(
         1 if lsthis['資產週轉率'] > lslast['資產週轉率'] else 0)
     return sum(factor)
+
 
 def loadDataAll(code, base):
     dataFrames = [
@@ -84,7 +94,7 @@ def loadData1(code, base):
         if (len(td_array) > 1):
             itemName = remove_td(td_array[1]).strip()
             if any(itemName in s for s in keyword) and (
-                (itemName == '期別' and len(period) == 0) or itemName != '期別'):
+                    (itemName == '期別' and len(period) == 0) or itemName != '期別'):
                 for j in range(len(td_array)-2):
                     val = remove_td(td_array[j+2])
                     if itemName == '期別':
@@ -102,7 +112,7 @@ def loadData1(code, base):
                                 AssetTurnover.append(val)
                         except:
                             continue
-    #set to data
+    # set to data
     data = []
     for i in range(len(period)):
         data.append(
@@ -127,7 +137,7 @@ def loadData2(code, base):
         if (len(td_array) > 1):
             try:
                 val = remove_td(td_array[1]).split('.')
-                #轉成西元年
+                # 轉成西元年
                 yyyy = str(int(val[0]) + 1911)
                 if len(val) > 1:
                     yyyy = yyyy + '.' + val[1]
@@ -202,3 +212,6 @@ def remove_td(column):
     remove_one = column.split('<')
     remove_two = remove_one[0].split('>')
     return remove_two[1].replace(",", "")
+
+
+print(getPiotroskiFScoreByLast4Q('1101'))
