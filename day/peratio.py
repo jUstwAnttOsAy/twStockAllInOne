@@ -4,8 +4,6 @@ import pandas as pd
 
 #公司代號,公司名稱,殖利率(%),本益比,股價淨值比,財報年/季
 def peratio_date(date):
-    print('https://www.twse.com.tw/exchangeReport/BWIBBU_d?response=csv&date=' +
-        date.strftime('%Y%m%d') + '&selectType=ALL')
     # 下載股價
     r = requests.post(
         'https://www.twse.com.tw/exchangeReport/BWIBBU_d?response=csv&date=' +
