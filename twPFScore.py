@@ -212,6 +212,3 @@ def remove_td(column):
     remove_one = column.split('<')
     remove_two = remove_one[0].split('>')
     return remove_two[1].replace(",", "")
-
-
-print(getPiotroskiFScoreByLast4Q('1101'))
