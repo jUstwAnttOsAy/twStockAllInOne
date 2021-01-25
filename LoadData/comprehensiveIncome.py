@@ -18,6 +18,15 @@ def crawl_comprehensiveIncome(year, season, stocktype):
         'season':season
     }
 
+    '''
+    營收=營業收入	 218704469
+    毛利=營業毛利（毛損） 90352125
+    營業利益=營業利益（損失） 64266023
+    稅前淨利=稅前淨利（淨損） 68181652
+    稅後淨利=繼續營業單位本期淨利（淨損） 61387310
+    母公司業主淨利=淨利（淨損）歸屬於母公司業主 61393851
+    EPS=基本每股盈餘（元）
+    '''
     # 拆解內容
     table_array = COMMON.crawl_data2text(url, form_data).split('<table')
     
