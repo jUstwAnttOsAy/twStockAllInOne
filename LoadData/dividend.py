@@ -1,0 +1,150 @@
+import Public.COMMON as COMMON
+import pandas as pd
+import datetime
+import os
+
+# https://mops.twse.com.tw/server-java/t05st09sub
+
+# 爬蟲股利資料
+
+
+def crawl_dividend(year, stocktype):
+    url = 'https://mops.twse.com.tw/server-java/t05st09sub'
+    form_data = {
+        'encodeURIComponent': 1,
+        'step': 1,
+        'TYPEK': stocktype,
+        'YEAR': COMMON.year_CE2RC(year),
+        'first': '',
+        'qryType': 2,
+    }
+
+    # 拆解內容
+    table_array = COMMON.crawl_data2text(url, form_data,
+                                         'big5').split('<table')
+
+    dfdividend = pd.DataFrame()
+
+    for table in table_array:
+        if '公司代號' in table:
+            tr_array = table.split('<tr')
+            for tr in tr_array:
+                td_array = tr.split('<td')
+                if len(td_array) > 15:
+                    #公司代號
+                    code = COMMON.col_clear(td_array[1]).split('-')[0].strip()
+                    #所屬年度
+                    iBelongY, vaild = COMMON.TryParse('int',COMMON.col_clear(td_array[3]).split('年')[0])
+                    belongY = COMMON.year_RC2CE(iBelongY)
+                    # 現金股利
+                    earnM, vaild = COMMON.TryParse('float', COMMON.col_clear(td_array[12]))
+                    # 股票股利
+                    earnS, vaild = COMMON.TryParse('float', COMMON.col_clear(td_array[15]))
+                    #判斷是否有該公司當年度資料，更新/新增
+                    index = (code, belongY)
+
+                    if len(dfdividend.index) > 0 and index in dfdividend.index:
+                        data = dfdividend.loc[index]
+                        data[0] = data[0] + earnM
+                        data[1] = data[1] + earnS
+                    else:
+                        data = [earnM, earnS]
+                        stockpd = pd.DataFrame(
+                            data=[data],
+                            index=pd.MultiIndex.from_tuples([(code, belongY)]),
+                            columns=['現金股利', '股票股利'])
+                        dfdividend = dfdividend.append(stockpd)
+                        
+    return dfdividend
+
+def crawl_dividendTDR(year, stocktype):
+    url = 'https://mops.twse.com.tw/mops/web/ajax_t66sb23'
+    form_data = {
+        'encodeURIComponent': 1,
+        'step': 1,
+        'firstin': '1',
+        'Off': '1',
+        'TYPEK': stocktype,
+        'YEAR': COMMON.year_CE2RC(year)
+    }
+
+    # 拆解內容
+    table_array = COMMON.crawl_data2text(url, form_data,
+                                         'big5').split('<table')
+
+    dfdividendTDR = pd.DataFrame()
+
+    for table in table_array:
+        if '公司代號' in table:
+            tr_array = table.split('<tr')
+            for tr in tr_array:
+                td_array = tr.split('<td')
+                if len(td_array) > 15:
+                    #公司代號
+                    code = COMMON.col_clear(td_array[1]).split('-')[0].strip()
+                    #所屬年度
+                    belongY = COMMON.year_RC2CE(year)
+                    # 現金股利
+                    earnM, vaild = COMMON.TryParse('float', COMMON.col_clear(td_array[11]))
+                    # 股票股利
+                    earnS, vaild = COMMON.TryParse('float', COMMON.col_clear(td_array[13]))
+                    #判斷是否有該公司當年度資料，更新/新增
+                    index = (code, belongY)
+
+                    if len(dfdividendTDR.index) > 0 and index in dfdividendTDR.index:
+                        data = dfdividendTDR.loc[index]
+                        data[0] = data[0] + earnM
+                        data[1] = data[1] + earnS
+                    else:
+                        data = [earnM, earnS]
+                        stockpd = pd.DataFrame(
+                            data=[data],
+                            index=pd.MultiIndex.from_tuples([(code, belongY)]),
+                            columns=['現金股利', '股票股利'])
+                        dfdividendTDR = dfdividendTDR.append(stockpd)
+                        
+    return dfdividendTDR
+
+
+#爬10年資料並匯出csv
+def getDividend_crawl(fromN2Now):
+    eyyy = datetime.datetime.today().year - 1911
+    syyy = eyyy - fromN2Now
+
+    StocksData = pd.DataFrame()
+    for yyy in range(syyy, eyyy):
+        try:
+            StocksData = StocksData.append(
+                crawl_dividend(yyy, COMMON.__LISTEDCODE__))
+            StocksData = StocksData.append(crawl_dividend(yyy, COMMON.__OTCCODE__))
+            StocksData = StocksData.append(
+                crawl_dividend(yyy, COMMON.__EMERGINGSCODE__))
+            StocksData = StocksData.append(
+                crawl_dividend(yyy, COMMON.__PUBLICCODE__))
+            #for TDR
+            StocksData = StocksData.append(
+                crawl_dividendTDR(yyy, COMMON.__LISTEDCODE__))
+            StocksData = StocksData.append(crawl_dividendTDR(yyy, COMMON.__OTCCODE__))
+            StocksData = StocksData.append(
+                crawl_dividendTDR(yyy, COMMON.__EMERGINGSCODE__))
+            StocksData = StocksData.append(
+                crawl_dividendTDR(yyy, COMMON.__PUBLICCODE__))
+        except:
+            print(f'{yyy}-NO DATA')
+
+    path = os.path.abspath('./data/')
+    StocksData.to_csv(f'{path}/dividend.csv', index_label=['公司代號', '所屬年度'])
+
+
+#讀取股利資料
+def getDividend_data(reload=False):
+    path = os.path.abspath('./data/')
+    file = f'{path}/dividend.csv'
+    if reload != True and os.path.exists(file):
+        StocksData = pd.read_csv(file, index_col=[0, 1])
+        return StocksData
+    else:
+        #預設帶出近10年
+        print('RELOAD DIVIDEND......')
+        getDividend_crawl(10)
+        return getDividend_data()
