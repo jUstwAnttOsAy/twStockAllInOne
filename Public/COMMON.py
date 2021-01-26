@@ -40,7 +40,7 @@ def col_clear(column):
 # 讀取url將頁面資料輸出
 
 
-def crawl_data2text(url, formdata, encoding='utf-8', delay=1000):
+def crawl_data2text(url, formdata, encoding='utf-8', delay=500):
     response = requests.post(url, formdata)
     response.encoding = encoding
     time.sleep(float(delay/1000))
