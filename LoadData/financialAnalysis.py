@@ -110,7 +110,7 @@ def crawl_financialAnalysis(year, stocktype):
 
 
 #爬10年資料並匯出csv
-def getFinancialAnalysis_crawl(fromN2Now):
+def get_FinancialAnalysis_crawl(fromN2Now):
     eyyy = datetime.datetime.today().year - 1911
     syyy = eyyy - fromN2Now
 
@@ -132,7 +132,7 @@ def getFinancialAnalysis_crawl(fromN2Now):
     StocksData.to_csv(f'{path}/financialAnalysis.csv', index_label=['公司代號', '所屬年度'])
 
 #讀取股利資料
-def getFinancialAnalysis_data(reload=False):
+def get_FinancialAnalysis_data(reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/financialAnalysis.csv'
     if reload != True and os.path.exists(file):
@@ -141,5 +141,5 @@ def getFinancialAnalysis_data(reload=False):
     else:
         #預設帶出近10年
         print('RELOAD FinancialAnalysis......')
-        getFinancialAnalysis_crawl(10)
-        return getFinancialAnalysis_data()
+        get_FinancialAnalysis_crawl(10)
+        return get_FinancialAnalysis_data()

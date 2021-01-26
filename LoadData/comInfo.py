@@ -42,7 +42,7 @@ def crawl_comInfo(stocktype):
     return dfComInfo
 
 # 取得公司資料並匯出csv
-def getDividend_crawl():
+def get_Dividend_crawl():
     dfComInfo = pd.DataFrame()
     dfComInfo = dfComInfo.append(crawl_comInfo(COMMON.__LISTEDCODE__))
     dfComInfo = dfComInfo.append(crawl_comInfo(COMMON.__OTCCODE__))
@@ -52,7 +52,7 @@ def getDividend_crawl():
     path = os.path.abspath('./data/')
     dfComInfo.to_csv(f'{path}/comInfo.csv', index_label=['公司代號'])
 
-def getComInfo_data(reload=False):
+def get_ComInfo_data(reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/comInfo.csv'
     if reload != True and os.path.exists(file):
@@ -60,5 +60,5 @@ def getComInfo_data(reload=False):
         return dfComInfo
     else:
         print('RELOAD ComInfo......')
-        getDividend_crawl()
-        return getComInfo_data()
+        get_Dividend_crawl()
+        return get_ComInfo_data()

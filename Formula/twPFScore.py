@@ -1,6 +1,17 @@
 import requests
 import pandas as pd
 
+'''
+1.資產報酬率(ROA)>0
+2.今年的ROA>去年ROA
+3.今年的營業現金流>0
+4.營業現金流>稅後淨利
+5.今年度的長期負債金額 < 上一年度
+6.今年度的流動比率 > 上一年度
+7.發行新股
+8.今年度的毛利率 > 上一年度
+9.今年度的資產週轉率 > 上一年度
+'''
 
 def getPiotroskiFScore(year, code):
     df = loadDataAll(code, 'Y')

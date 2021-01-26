@@ -107,7 +107,7 @@ def crawl_dividendTDR(year, stocktype):
 
 
 #爬10年資料並匯出csv
-def getDividend_crawl(fromN2Now):
+def get_Dividend_crawl(fromN2Now):
     eyyy = datetime.datetime.today().year - 1911
     syyy = eyyy - fromN2Now
 
@@ -137,7 +137,7 @@ def getDividend_crawl(fromN2Now):
 
 
 #讀取股利資料
-def getDividend_data(reload=False):
+def get_Dividend_data(reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/dividend.csv'
     if reload != True and os.path.exists(file):
@@ -146,5 +146,5 @@ def getDividend_data(reload=False):
     else:
         #預設帶出近10年
         print('RELOAD DIVIDEND......')
-        getDividend_crawl(10)
-        return getDividend_data()
+        get_Dividend_crawl(10)
+        return get_Dividend_data()
