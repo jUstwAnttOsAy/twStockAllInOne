@@ -1,6 +1,8 @@
 import requests
-from datetime import datetime
+from datetime import datetime, date
+import pandas as pd
 import time
+import os
 
 # 常數
 
@@ -96,6 +98,23 @@ def minusMonth(oDate, format):
 
     return nDate, nDate.strftime(format)
 
-    
-        
-  
+
+# 更新資料日期
+def UpdateDataRecord(dataType):
+    path = os.path.abspath('./data/')
+    file = f'{path}/UPDATEDATE.csv'
+    if os.path.exists(file):
+        dfUPDATEDATE = pd.read_csv(file, index_col=[0])
+    else:
+        dfUPDATEDATE = pd.DataFrame()
+
+    strDate = date.today().strftime("%Y/%m/%d")
+    if dataType in dfUPDATEDATE.index:
+        dfUPDATEDATE.loc[dataType] = strDate
+    else:
+        dfUPDATEDATE.append(
+          pd.DataFrame(data=[strDate], index=[dataType], columns=['更新日期']))
+
+    dfUPDATEDATE.to_csv(f'{path}/UPDATEDATE.csv', index_label=['更新日期'])
+
+

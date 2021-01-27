@@ -110,36 +110,41 @@ def crawl_financialAnalysis(year, stocktype):
 
 
 #爬10年資料並匯出csv
-def get_FinancialAnalysis_crawl(fromN2Now):
-    eyyy = datetime.datetime.today().year - 1911
-    syyy = eyyy - fromN2Now
+def get_FinancialAnalysis_crawl(StocksData, fromN2Now):
+    eyyyy = datetime.datetime.today().year
+    syyyy = eyyyy - fromN2Now
+    isUpd = False
 
-    StocksData = pd.DataFrame()
-    for yyy in range(syyy, eyyy):
-        try:
-            StocksData = StocksData.append(
-                crawl_financialAnalysis(yyy, COMMON.__LISTEDCODE__))
-            StocksData = StocksData.append(
-                crawl_financialAnalysis(yyy, COMMON.__OTCCODE__))
-            StocksData = StocksData.append(
-                crawl_financialAnalysis(yyy, COMMON.__EMERGINGSCODE__))
-            StocksData = StocksData.append(
-                crawl_financialAnalysis(yyy, COMMON.__PUBLICCODE__))
-        except:
-            print(f'{yyy}-NO DATA')
+    for yyyy in range(syyyy, eyyyy):
+        if yyyy not in StocksData.index.get_level_values(1):
+            try:
+                StocksData = StocksData.append(
+                    crawl_financialAnalysis(yyyy, COMMON.__LISTEDCODE__))
+                StocksData = StocksData.append(
+                    crawl_financialAnalysis(yyyy, COMMON.__OTCCODE__))
+                StocksData = StocksData.append(
+                    crawl_financialAnalysis(yyyy, COMMON.__EMERGINGSCODE__))
+                StocksData = StocksData.append(
+                    crawl_financialAnalysis(yyyy, COMMON.__PUBLICCODE__))
+                isUpd = True
+            except:
+                print(f'{yyyy}-NO DATA')
 
-    path = os.path.abspath('./data/')
-    StocksData.to_csv(f'{path}/financialAnalysis.csv', index_label=['公司代號', '所屬年度'])
+    if isUpd:
+        path = os.path.abspath('./data/')
+        StocksData.to_csv(f'{path}/financialAnalysis.csv', index_label=['公司代號', '所屬年度'])
+        COMMON.UpdateDataRecord('financialAnalysis')
 
 #讀取股利資料
-def get_FinancialAnalysis_data(reload=False):
+def get_FinancialAnalysis_data(n = 10, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/financialAnalysis.csv'
     if reload != True and os.path.exists(file):
-        StocksData = pd.read_csv(file, index_col=[0, 1])
+        StocksData = pd.read_csv(file, index_col=[0, 1], dtype={'公司代號':str})
+        get_FinancialAnalysis_crawl(StocksData, n)
         return StocksData
     else:
         #預設帶出近10年
         print('RELOAD FinancialAnalysis......')
-        get_FinancialAnalysis_crawl(10)
+        get_FinancialAnalysis_crawl(pd.DataFrame(), n)
         return get_FinancialAnalysis_data()

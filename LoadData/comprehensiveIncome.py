@@ -64,7 +64,7 @@ def crawl_comprehensiveIncome(year, season, stocktype):
                     index = (code, COMMON.year_RC2CE(year), season)
 
                     Revenue1, Revenue2, GrossProfit, BusinessInterest, NetProfitBeforeTax, NetProfitAfterTax, NetProfitOfParentCompanyOwners, EPS = 0, 0, 0, 0, 0, 0, 0, 0
-                    
+
                     if dtIndex['Revenue1'] >= 0:
                         Revenue1, vaild = COMMON.TryParse(
                             'float',
@@ -103,7 +103,8 @@ def crawl_comprehensiveIncome(year, season, stocktype):
                             COMMON.col_clear(td_array[dtIndex['EPS']]))
 
                     data = [
-                        Revenue1 + Revenue2, GrossProfit, BusinessInterest if BusinessInterest>0 else NetProfitBeforeTax,
+                        Revenue1 + Revenue2, GrossProfit, BusinessInterest
+                        if BusinessInterest > 0 else NetProfitBeforeTax,
                         NetProfitBeforeTax, NetProfitAfterTax,
                         NetProfitOfParentCompanyOwners, EPS
                     ]
@@ -112,7 +113,8 @@ def crawl_comprehensiveIncome(year, season, stocktype):
                         data=[data],
                         index=pd.MultiIndex.from_tuples([index]),
                         columns=[
-                            '營收', '毛利', '營業利益', '稅前淨利', '稅後淨利', '母公司業主淨利','EPS'
+                            '營收', '毛利', '營業利益', '稅前淨利', '稅後淨利', '母公司業主淨利',
+                            'EPS'
                         ])
                     dfcomprehensiveIncome = dfcomprehensiveIncome.append(
                         stockpd)
@@ -121,42 +123,50 @@ def crawl_comprehensiveIncome(year, season, stocktype):
 
 
 #爬10年資料並匯出csv
-def get_comprehensiveIncome_crawl(fromN2Now):
-    eyyy = datetime.datetime.today().year - 1911
-    syyy = eyyy - fromN2Now
+def get_comprehensiveIncome_crawl(StocksData, fromN2Now):
+    eyyyy = datetime.datetime.today().year
+    syyyy = eyyyy - fromN2Now
+    isUpd = False
 
-    StocksData = pd.DataFrame()
-    for yyy in range(syyy, eyyy):
+    for yyyy in range(syyyy, eyyyy):
         for season in (range(1, 5)):
             try:
-                StocksData = StocksData.append(
-                    crawl_comprehensiveIncome(yyy, season,
-                                              COMMON.__LISTEDCODE__))
-                StocksData = StocksData.append(
-                    crawl_comprehensiveIncome(yyy, season, COMMON.__OTCCODE__))
-                StocksData = StocksData.append(
-                    crawl_comprehensiveIncome(yyy, season,
-                                              COMMON.__EMERGINGSCODE__))
-                StocksData = StocksData.append(
-                    crawl_comprehensiveIncome(yyy, season,
-                                              COMMON.__PUBLICCODE__))
+                StocksData.loc[slice(None), yyyy, season].head()
             except:
-                print(f'{yyy}/{season}-NO DATA')
+                try:
+                    StocksData = StocksData.append(
+                        crawl_comprehensiveIncome(yyyy, season,
+                                                  COMMON.__LISTEDCODE__))
+                    StocksData = StocksData.append(
+                        crawl_comprehensiveIncome(yyyy, season,
+                                                  COMMON.__OTCCODE__))
+                    StocksData = StocksData.append(
+                        crawl_comprehensiveIncome(yyyy, season,
+                                                  COMMON.__EMERGINGSCODE__))
+                    StocksData = StocksData.append(
+                        crawl_comprehensiveIncome(yyyy, season,
+                                                  COMMON.__PUBLICCODE__))
+                    isUpd = True
+                except:
+                    print(f'{yyyy}/{season}-NO DATA')
 
-    path = os.path.abspath('./data/')
-    StocksData.to_csv(
-        f'{path}/comprehensiveIncome.csv', index_label=['公司代號', '所屬年度', '季'])
+    if isUpd:
+        path = os.path.abspath('./data/')
+        StocksData.to_csv(f'{path}/comprehensiveIncome.csv',
+                      index_label=['公司代號', '所屬年度', '季'])
+        COMMON.UpdateDataRecord('comprehensiveIncome')
 
 
 #讀取綜合資料
-def get_comprehensiveIncome_data(reload=False):
+def get_comprehensiveIncome_data(n=10, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/comprehensiveIncome.csv'
     if reload != True and os.path.exists(file):
-        StocksData = pd.read_csv(file, index_col=[0, 1, 2])
+        StocksData = pd.read_csv(file, index_col=[0, 1, 2], dtype={'公司代號':str})
+        get_comprehensiveIncome_crawl(StocksData, n)
         return StocksData
     else:
         #預設帶出近10年
         print('RELOAD comprehensiveIncome......')
-        get_comprehensiveIncome_crawl(10)
+        get_comprehensiveIncome_crawl(pd.DataFrame(), n)
         return get_comprehensiveIncome_data()

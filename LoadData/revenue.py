@@ -23,39 +23,44 @@ def crawl_revenue(year, month, stocktype):
 
     return dfRevenue
 
-def get_Revenue_crawl(fromN2Now):
+def get_Revenue_crawl(StocksData, fromN2Now):
     revenueDate = date.today()
-
-    StocksData = pd.DataFrame()
+    isUpd = False
     for i in range(fromN2Now):
         revenueDate, YYMM = COMMON.minusMonth(revenueDate, '%Y/%m')
         arrYYMM = YYMM.split('/')
 
         intYYYY, vaild = COMMON.TryParse('int', arrYYMM[0])
         intMM, vaild = COMMON.TryParse('int', arrYYMM[1])
-        try:
-            StocksData = StocksData.append(
-            crawl_revenue(intYYYY, intMM, COMMON.__LISTEDCODE__))
-            StocksData = StocksData.append(crawl_revenue(intYYYY, intMM, COMMON.__OTCCODE__))
-            StocksData = StocksData.append(
-                crawl_revenue(intYYYY, intMM, COMMON.__EMERGINGSCODE__))
-            StocksData = StocksData.append(
-                crawl_revenue(intYYYY, intMM, COMMON.__PUBLICCODE__))
-        except:
-            print(f'{arrYYMM}-NO DATA')
+
+        if f'{str(intYYYY)}/{str(intMM)}' not in StocksData.index.get_level_values(1):
+            try:
+                StocksData = StocksData.append(
+                crawl_revenue(intYYYY, intMM, COMMON.__LISTEDCODE__))
+                StocksData = StocksData.append(crawl_revenue(intYYYY, intMM, COMMON.__OTCCODE__))
+                StocksData = StocksData.append(
+                    crawl_revenue(intYYYY, intMM, COMMON.__EMERGINGSCODE__))
+                StocksData = StocksData.append(
+                    crawl_revenue(intYYYY, intMM, COMMON.__PUBLICCODE__))
+                isUpd = True
+            except:
+                print(f'{arrYYMM}-NO DATA')
         
-    path = os.path.abspath('./data/')
-    StocksData.to_csv(f'{path}/revenue.csv', index_label=['公司代號', '資料年月'])
+    if isUpd:
+        path = os.path.abspath('./data/')
+        StocksData.to_csv(f'{path}/revenue.csv', index_label=['公司代號', '資料年月'])
+        COMMON.UpdateDataRecord('revenue')
 
 #讀取營收資料
-def get_Revenue_data(reload=False):
+def get_Revenue_data(n=120, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/revenue.csv'
     if reload != True and os.path.exists(file):
-        StocksData = pd.read_csv(file, index_col=[0, 1])
+        StocksData = pd.read_csv(file, index_col=[0, 1], dtype={'公司代號':str})
+        get_Revenue_crawl(StocksData, n)
         return StocksData
     else:
         #預設帶出近10年
         print('RELOAD REVENUE......')
-        get_Revenue_crawl(120)
+        get_Revenue_crawl(pd.DataFrame, n)
         return get_Revenue_data()    

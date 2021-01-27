@@ -26,13 +26,13 @@ def crawl_balanceSheet(year, season, stocktype):
 
     dtTitle = {
         'TotalAssets': ['資產總額', '資產總計'],
-        'StockholdersEquity': ['權益總計','權益總額'],
+        'StockholdersEquity': ['權益總計', '權益總額'],
         'NetAssetValueShare': ['每股參考淨值'],
-        'CurrentAssets':['流動資產'],
-        'NoncurrentAssets':['非流動資產'],
-        'CurrentLiabilities':['流動負債'],
-        'NoncurrentLiabilities':['非流動負債'],
-        'TotalLiabilities':['負債總計', '負債總額']
+        'CurrentAssets': ['流動資產'],
+        'NoncurrentAssets': ['非流動資產'],
+        'CurrentLiabilities': ['流動負債'],
+        'NoncurrentLiabilities': ['非流動負債'],
+        'TotalLiabilities': ['負債總計', '負債總額']
     }
 
     for table in table_array:
@@ -64,7 +64,7 @@ def crawl_balanceSheet(year, season, stocktype):
                     index = (code, COMMON.year_RC2CE(year), season)
 
                     TotalAssets, StockholdersEquity, NetAssetValueShare, CurrentAssets, NoncurrentAssets, CurrentLiabilities, NoncurrentLiabilities, TotalLiabilities = 0, 0, 0, 0, 0, 0, 0, 0
-                    
+
                     if dtIndex['TotalAssets'] >= 0:
                         TotalAssets, vaild = COMMON.TryParse(
                             'float',
@@ -72,11 +72,13 @@ def crawl_balanceSheet(year, season, stocktype):
                     if dtIndex['StockholdersEquity'] >= 0:
                         StockholdersEquity, vaild = COMMON.TryParse(
                             'float',
-                            COMMON.col_clear(td_array[dtIndex['StockholdersEquity']]))
+                            COMMON.col_clear(
+                                td_array[dtIndex['StockholdersEquity']]))
                     if dtIndex['NetAssetValueShare'] >= 0:
                         NetAssetValueShare, vaild = COMMON.TryParse(
                             'float',
-                            COMMON.col_clear(td_array[dtIndex['NetAssetValueShare']]))
+                            COMMON.col_clear(
+                                td_array[dtIndex['NetAssetValueShare']]))
                     if dtIndex['CurrentAssets'] >= 0:
                         CurrentAssets, vaild = COMMON.TryParse(
                             'float',
@@ -95,65 +97,73 @@ def crawl_balanceSheet(year, season, stocktype):
                     if dtIndex['NoncurrentLiabilities'] >= 0:
                         NoncurrentLiabilities, vaild = COMMON.TryParse(
                             'float',
-                            COMMON.col_clear(td_array[
-                                dtIndex['NoncurrentLiabilities']]))
+                            COMMON.col_clear(
+                                td_array[dtIndex['NoncurrentLiabilities']]))
                     if dtIndex['TotalLiabilities'] >= 0:
                         TotalLiabilities, vaild = COMMON.TryParse(
                             'float',
-                            COMMON.col_clear(td_array[dtIndex['TotalLiabilities']]))
+                            COMMON.col_clear(
+                                td_array[dtIndex['TotalLiabilities']]))
 
                     data = [
-                        TotalAssets, TotalLiabilities, StockholdersEquity, NetAssetValueShare, CurrentAssets, NoncurrentAssets, CurrentLiabilities, NoncurrentLiabilities
+                        TotalAssets, TotalLiabilities, StockholdersEquity,
+                        NetAssetValueShare, CurrentAssets, NoncurrentAssets,
+                        CurrentLiabilities, NoncurrentLiabilities
                     ]
 
                     stockpd = pd.DataFrame(
                         data=[data],
                         index=pd.MultiIndex.from_tuples([index]),
                         columns=[
-                            '資產總額', '負債總額', '權益總額', '每股參考淨值', '流動資產', '非流動資產','流動負債','非流動負債'
+                            '資產總額', '負債總額', '權益總額', '每股參考淨值', '流動資產', '非流動資產',
+                            '流動負債', '非流動負債'
                         ])
-                    dfbalanceSheet = dfbalanceSheet.append(
-                        stockpd)
+                    dfbalanceSheet = dfbalanceSheet.append(stockpd)
 
     return dfbalanceSheet
 
-#爬10年資料並匯出csv
-def get_balanceSheet_crawl(fromN2Now):
-    eyyy = datetime.datetime.today().year - 1911
-    syyy = eyyy - fromN2Now
 
-    StocksData = pd.DataFrame()
-    for yyy in range(syyy, eyyy):
+#爬10年資料並匯出csv
+def get_balanceSheet_crawl(StocksData, fromN2Now):
+    eyyyy = datetime.datetime.today().year
+    syyyy = eyyyy - fromN2Now
+    isUpd = False
+
+    for yyyy in range(syyyy, eyyyy):
         for season in (range(1, 5)):
             try:
-                StocksData = StocksData.append(
-                    crawl_balanceSheet(yyy, season,
-                                              COMMON.__LISTEDCODE__))
-                StocksData = StocksData.append(
-                    crawl_balanceSheet(yyy, season, COMMON.__OTCCODE__))
-                StocksData = StocksData.append(
-                    crawl_balanceSheet(yyy, season,
-                                              COMMON.__EMERGINGSCODE__))
-                StocksData = StocksData.append(
-                    crawl_balanceSheet(yyy, season,
-                                              COMMON.__PUBLICCODE__))
+                StocksData.loc[slice(None), yyyy, season].head()
             except:
-                print(f'{yyy}/{season}-NO DATA')
+                try:
+                    StocksData = StocksData.append(
+                        crawl_balanceSheet(yyyy, season, COMMON.__LISTEDCODE__))
+                    StocksData = StocksData.append(
+                        crawl_balanceSheet(yyyy, season, COMMON.__OTCCODE__))
+                    StocksData = StocksData.append(
+                        crawl_balanceSheet(yyyy, season,
+                                           COMMON.__EMERGINGSCODE__))
+                    StocksData = StocksData.append(
+                        crawl_balanceSheet(yyyy, season, COMMON.__PUBLICCODE__))
+                    isUpd = True
+                except:
+                    print(f'{yyyy}/{season}-NO DATA')
 
-    path = os.path.abspath('./data/')
-    StocksData.to_csv(
-        f'{path}/balanceSheet.csv', index_label=['公司代號', '所屬年度', '季'])
-
+    if isUpd:
+        path = os.path.abspath('./data/')
+        StocksData.to_csv(f'{path}/balanceSheet.csv',
+                      index_label=['公司代號', '所屬年度', '季'])
+        COMMON.UpdateDataRecord('balanceSheet')
 
 #讀取資產負債表資料
-def get_balanceSheet_data(reload=False):
+def get_balanceSheet_data(n=10, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/balanceSheet.csv'
     if reload != True and os.path.exists(file):
-        StocksData = pd.read_csv(file, index_col=[0, 1, 2])
+        StocksData = pd.read_csv(file, index_col=[0, 1, 2], dtype={'公司代號':str})
+        get_balanceSheet_crawl(StocksData, n)
         return StocksData
     else:
         #預設帶出近10年
         print('RELOAD balanceSheet......')
-        get_balanceSheet_crawl(10)
+        get_balanceSheet_crawl(pd.DataFrame(), n)
         return get_balanceSheet_data()
