@@ -56,13 +56,14 @@ def year_CE2RC(year):
         year = year-1911
     return year
 
+
 def date_CE2RC(strdate):
     dateArray = strdate.split('/')
-    if len(dateArray)>1:
+    if len(dateArray) > 1:
         intYear, vaild = TryParse('int', dateArray[0])
         if vaild:
             nstrdate = str(year_CE2RC(intYear))
-            for i in range(1,len(dateArray)):
+            for i in range(1, len(dateArray)):
                 nstrdate = nstrdate + f'/{dateArray[i]}'
             return nstrdate
     return strdate
@@ -75,13 +76,14 @@ def year_RC2CE(year):
         year = year+1911
     return year
 
+
 def date_RC2CE(strdate):
     dateArray = strdate.split('/')
-    if len(dateArray)>1:
+    if len(dateArray) > 1:
         intYear, vaild = TryParse('int', dateArray[0])
         if vaild:
             nstrdate = str(year_RC2CE(intYear))
-            for i in range(1,len(dateArray)):
+            for i in range(1, len(dateArray)):
                 nstrdate = nstrdate + f'/{dateArray[i]}'
             return nstrdate
     return strdate
@@ -112,9 +114,7 @@ def UpdateDataRecord(dataType):
     if dataType in dfUPDATEDATE.index:
         dfUPDATEDATE.loc[dataType] = strDate
     else:
-        dfUPDATEDATE.append(
-          pd.DataFrame(data=[strDate], index=[dataType], columns=['更新日期']))
+        dfUPDATEDATE = dfUPDATEDATE.append(
+            pd.DataFrame(data=[strDate], index=[dataType], columns=['更新日期']))
 
-    dfUPDATEDATE.to_csv(f'{path}/UPDATEDATE.csv', index_label=['更新日期'])
-
-
+    dfUPDATEDATE.to_csv(f'{path}/UPDATEDATE.csv', index_label=['類別'])

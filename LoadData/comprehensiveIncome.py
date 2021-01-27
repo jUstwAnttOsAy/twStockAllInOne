@@ -3,7 +3,7 @@ import pandas as pd
 import datetime
 import os
 
-#https://mops.twse.com.tw/mops/web/t163sb04
+# https://mops.twse.com.tw/mops/web/t163sb04
 
 
 # 爬蟲綜合損益表資料
@@ -122,11 +122,11 @@ def crawl_comprehensiveIncome(year, season, stocktype):
     return dfcomprehensiveIncome
 
 
-#爬10年資料並匯出csv
+# 爬10年資料並匯出csv
 def get_comprehensiveIncome_crawl(StocksData, fromN2Now):
     eyyyy = datetime.datetime.today().year
     syyyy = eyyyy - fromN2Now
-    isUpd = False
+    oCnt = len(StocksData)
 
     for yyyy in range(syyyy, eyyyy):
         for season in (range(1, 5)):
@@ -146,27 +146,27 @@ def get_comprehensiveIncome_crawl(StocksData, fromN2Now):
                     StocksData = StocksData.append(
                         crawl_comprehensiveIncome(yyyy, season,
                                                   COMMON.__PUBLICCODE__))
-                    isUpd = True
                 except:
                     print(f'{yyyy}/{season}-NO DATA')
 
-    if isUpd:
+    if len(StocksData) > oCnt:
         path = os.path.abspath('./data/')
         StocksData.to_csv(f'{path}/comprehensiveIncome.csv',
-                      index_label=['公司代號', '所屬年度', '季'])
+                          index_label=['公司代號', '所屬年度', '季'])
         COMMON.UpdateDataRecord('comprehensiveIncome')
 
 
-#讀取綜合資料
+# 讀取綜合資料
 def get_comprehensiveIncome_data(n=10, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/comprehensiveIncome.csv'
     if reload != True and os.path.exists(file):
-        StocksData = pd.read_csv(file, index_col=[0, 1, 2], dtype={'公司代號':str})
+        StocksData = pd.read_csv(
+            file, index_col=[0, 1, 2], dtype={'公司代號': str})
         get_comprehensiveIncome_crawl(StocksData, n)
         return StocksData
     else:
-        #預設帶出近10年
+        # 預設帶出近10年
         print('RELOAD comprehensiveIncome......')
         get_comprehensiveIncome_crawl(pd.DataFrame(), n)
         return get_comprehensiveIncome_data()

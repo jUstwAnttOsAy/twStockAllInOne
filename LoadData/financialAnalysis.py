@@ -21,74 +21,74 @@ def crawl_financialAnalysis(year, stocktype):
 
     # 拆解內容
     table_array = COMMON.crawl_data2text(url, form_data).split('<table')
-    
+
     dffinancialAnalysis = pd.DataFrame()
 
     tr_array = table_array[3].split('<tr')
     for tr in tr_array:
         td_array = tr.split('<td')
         if len(td_array) > 15:
-            #公司代號
+            # 公司代號
             CODE = COMMON.col_clear(td_array[1]).split('-')[0].strip()
-            #負債占資產比率
+            # 負債占資產比率
             DEBT, vaild = COMMON.TryParse('float',
                                           COMMON.col_clear(td_array[3]))
-            #長期資金佔不動產廠房及設備比率
+            # 長期資金佔不動產廠房及設備比率
             LTFA, vaild = COMMON.TryParse('float',
                                           COMMON.col_clear(td_array[4]))
-            #流動比率
+            # 流動比率
             CURR, vaild = COMMON.TryParse('float',
                                           COMMON.col_clear(td_array[5]))
-            #速動比率
+            # 速動比率
             QUIR, vaild = COMMON.TryParse('float',
                                           COMMON.col_clear(td_array[6]))
-            #利息保障倍數
+            # 利息保障倍數
             IPM, vaild = COMMON.TryParse('float',
                                          COMMON.col_clear(td_array[7]))
-            #應收款項周轉率
+            # 應收款項周轉率
             RECTURR, vaild = COMMON.TryParse('float',
-                                          COMMON.col_clear(td_array[8]))
-            #平均收現日數
+                                             COMMON.col_clear(td_array[8]))
+            # 平均收現日數
             AVGCCD, vaild = COMMON.TryParse('float',
                                             COMMON.col_clear(td_array[9]))
-            #存貨週轉率(次)
+            # 存貨週轉率(次)
             INVTUR, vaild = COMMON.TryParse('float',
                                             COMMON.col_clear(td_array[10]))
-            #平均銷貨日數
+            # 平均銷貨日數
             AVGSALESD, vaild = COMMON.TryParse('float',
                                                COMMON.col_clear(td_array[11]))
-            #不動產廠房及設備週轉率(次)
+            # 不動產廠房及設備週轉率(次)
             RPETURR, vaild = COMMON.TryParse('float',
                                              COMMON.col_clear(td_array[12]))
-            #總資產週轉率(次)
+            # 總資產週轉率(次)
             TATUR, vaild = COMMON.TryParse('float',
                                            COMMON.col_clear(td_array[13]))
-            #資產報酬率(%)
+            # 資產報酬率(%)
             ROA, vaild = COMMON.TryParse('float',
                                          COMMON.col_clear(td_array[14]))
-            #權益報酬率(%)
+            # 權益報酬率(%)
             ROE, vaild = COMMON.TryParse('float',
                                          COMMON.col_clear(td_array[15]))
-            #稅前純益佔實收資本比率(%)
+            # 稅前純益佔實收資本比率(%)
             NETPBTAXCAR, vaild = COMMON.TryParse(
                 'float', COMMON.col_clear(td_array[16]))
-            #純益率(%)
+            # 純益率(%)
             NETPR, vaild = COMMON.TryParse('float',
                                            COMMON.col_clear(td_array[17]))
-            #每股盈餘(元)
+            # 每股盈餘(元)
             EARNPER, vaild = COMMON.TryParse('float',
                                              COMMON.col_clear(td_array[18]))
-            #現金流量比率(%)
+            # 現金流量比率(%)
             CASHFR, vaild = COMMON.TryParse('float',
                                             COMMON.col_clear(td_array[19]))
-            #現金流量允當比率(%)
+            # 現金流量允當比率(%)
             ALLCASHFR, vaild = COMMON.TryParse('float',
                                                COMMON.col_clear(td_array[20]))
-            #現金再投資比率(%)
+            # 現金再投資比率(%)
             CASHREINVR, vaild = COMMON.TryParse('float',
                                                 COMMON.col_clear(td_array[21]))
 
-            #判斷是否有該公司當年度資料，更新/新增
+            # 判斷是否有該公司當年度資料，更新/新增
             index = (CODE, COMMON.year_RC2CE(year))
             data = [
                 DEBT, LTFA, CURR, QUIR, IPM, RECTURR, AVGCCD, INVTUR,
@@ -109,14 +109,14 @@ def crawl_financialAnalysis(year, stocktype):
     return dffinancialAnalysis
 
 
-#爬10年資料並匯出csv
+# 爬10年資料並匯出csv
 def get_FinancialAnalysis_crawl(StocksData, fromN2Now):
     eyyyy = datetime.datetime.today().year
     syyyy = eyyyy - fromN2Now
-    isUpd = False
+    oCnt = len(StocksData)
 
     for yyyy in range(syyyy, eyyyy):
-        if yyyy not in StocksData.index.get_level_values(1):
+        if StocksData.empty or yyyy not in StocksData.index.get_level_values(1):
             try:
                 StocksData = StocksData.append(
                     crawl_financialAnalysis(yyyy, COMMON.__LISTEDCODE__))
@@ -130,21 +130,24 @@ def get_FinancialAnalysis_crawl(StocksData, fromN2Now):
             except:
                 print(f'{yyyy}-NO DATA')
 
-    if isUpd:
+    if len(StocksData) > oCnt:
         path = os.path.abspath('./data/')
-        StocksData.to_csv(f'{path}/financialAnalysis.csv', index_label=['公司代號', '所屬年度'])
+        StocksData.to_csv(f'{path}/financialAnalysis.csv',
+                          index_label=['公司代號', '所屬年度'])
         COMMON.UpdateDataRecord('financialAnalysis')
 
-#讀取股利資料
-def get_FinancialAnalysis_data(n = 10, reload=False):
+# 讀取股利資料
+
+
+def get_FinancialAnalysis_data(n=10, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/financialAnalysis.csv'
     if reload != True and os.path.exists(file):
-        StocksData = pd.read_csv(file, index_col=[0, 1], dtype={'公司代號':str})
+        StocksData = pd.read_csv(file, index_col=[0, 1], dtype={'公司代號': str})
         get_FinancialAnalysis_crawl(StocksData, n)
         return StocksData
     else:
-        #預設帶出近10年
+        # 預設帶出近10年
         print('RELOAD FinancialAnalysis......')
         get_FinancialAnalysis_crawl(pd.DataFrame(), n)
         return get_FinancialAnalysis_data()
