@@ -116,7 +116,7 @@ def UpdateDataRecord(dataType):
         dfUPDATEDATE.loc[dataType] = data
     else:
         dfUPDATEDATE = dfUPDATEDATE.append(
-            pd.DataFrame(data=data, index=[dataType], columns=['年', '月','日']))
+            pd.DataFrame(data=[data], index=[dataType], columns=['年', '月','日']))
 
     dfUPDATEDATE.to_csv(f'{path}/UPDATEDATE.csv', index_label=['類別'])
 

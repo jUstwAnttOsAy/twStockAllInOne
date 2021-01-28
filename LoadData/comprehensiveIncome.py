@@ -116,6 +116,7 @@ def crawl_comprehensiveIncome(year, season, stocktype):
                             '營收', '毛利', '營業利益', '稅前淨利', '稅後淨利', '母公司業主淨利',
                             'EPS'
                         ])
+                    stockpd['毛利率'] = stockpd['毛利']/stockpd['營收']
                     dfcomprehensiveIncome = dfcomprehensiveIncome.append(
                         stockpd)
 
@@ -126,7 +127,7 @@ def crawl_comprehensiveIncome(year, season, stocktype):
 def get_comprehensiveIncome_crawl(StocksData, fromN2Now):
     eyyyy = datetime.datetime.today().year
     syyyy = eyyyy - fromN2Now
-    oCnt = len(StocksData)
+    oCnt = 0 if StocksData.empty else len(StocksData)
 
     for yyyy in range(syyyy, eyyyy):
         for season in (range(1, 5)):
@@ -149,9 +150,9 @@ def get_comprehensiveIncome_crawl(StocksData, fromN2Now):
                 except:
                     print(f'{yyyy}/{season}-NO DATA')
 
-    if len(StocksData) > oCnt:
+    if StocksData.empty!=True and len(StocksData) > oCnt:
         path = os.path.abspath('./data/')
-        StocksData.to_csv(f'{path}/comprehensiveIncome.csv',
+        StocksData.sort_index().to_csv(f'{path}/comprehensiveIncome.csv',
                           index_label=['公司代號', '所屬年度', '季'])
         COMMON.UpdateDataRecord('comprehensiveIncome')
 

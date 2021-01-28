@@ -127,7 +127,7 @@ def crawl_balanceSheet(year, season, stocktype):
 def get_balanceSheet_crawl(StocksData, fromN2Now):
     eyyyy = datetime.datetime.today().year
     syyyy = eyyyy - fromN2Now
-    oCnt = len(StocksData)
+    oCnt = 0 if StocksData.empty else len(StocksData)
 
     for yyyy in range(syyyy, eyyyy):
         for season in (range(1, 5)):
@@ -147,9 +147,9 @@ def get_balanceSheet_crawl(StocksData, fromN2Now):
                 except:
                     print(f'{yyyy}/{season}-NO DATA')
 
-    if len(StocksData) > oCnt:
+    if StocksData.empty!=True and len(StocksData) > oCnt:
         path = os.path.abspath('./data/')
-        StocksData.to_csv(f'{path}/balanceSheet.csv',
+        StocksData.sort_index().to_csv(f'{path}/balanceSheet.csv',
                           index_label=['公司代號', '所屬年度', '季'])
         COMMON.UpdateDataRecord('balanceSheet')
 

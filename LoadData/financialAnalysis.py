@@ -113,7 +113,7 @@ def crawl_financialAnalysis(year, stocktype):
 def get_FinancialAnalysis_crawl(StocksData, fromN2Now):
     eyyyy = datetime.datetime.today().year
     syyyy = eyyyy - fromN2Now
-    oCnt = len(StocksData)
+    oCnt = 0 if StocksData.empty else len(StocksData)
 
     for yyyy in range(syyyy, eyyyy):
         if StocksData.empty or yyyy not in StocksData.index.get_level_values(1):
@@ -129,9 +129,9 @@ def get_FinancialAnalysis_crawl(StocksData, fromN2Now):
             except:
                 print(f'{yyyy}-NO DATA')
 
-    if len(StocksData) > oCnt:
+    if StocksData.empty!=True and len(StocksData) > oCnt:
         path = os.path.abspath('./data/')
-        StocksData.to_csv(f'{path}/financialAnalysis.csv',
+        StocksData.sort_index().to_csv(f'{path}/financialAnalysis.csv',
                           index_label=['公司代號', '所屬年度'])
         COMMON.UpdateDataRecord('financialAnalysis')
 

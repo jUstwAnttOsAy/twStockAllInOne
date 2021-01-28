@@ -54,10 +54,10 @@ def crawl_price(date):
 
 
 def get_price_crawl(StocksData, fromN2Now):
-    oneDay = datetime.timedelta(days=1)
+    oneDay = datetime.datetime.timedelta(days=1)
     currDate = datetime.datetime.today()
     cnt = 0
-    oCnt = len(StocksData)
+    oCnt = 0 if StocksData.empty else len(StocksData)
     while cnt < fromN2Now:
         strDate = currDate.strftime('%Y%m%d')
         intDate, vaild = COMMON.TryParse('int', strDate)
@@ -71,9 +71,9 @@ def get_price_crawl(StocksData, fromN2Now):
             cnt += 1
         currDate = currDate-oneDay
 
-    if len(StocksData) > oCnt:
+    if StocksData.empty!=True and len(StocksData) > oCnt:
         path = os.path.abspath('./data/')
-        StocksData.to_csv(f'{path}/price.csv', index_label=['公司代號', '資料日期'])
+        StocksData.sort_index().to_csv(f'{path}/price.csv', index_label=['公司代號', '資料日期'])
         COMMON.UpdateDataRecord('price')
 
 # 讀取股利資料
@@ -86,7 +86,7 @@ def get_price_data(n=60, reload=False):
         StocksData = pd.read_csv(file, dtype={'公司代號': str})
         StocksData = StocksData.set_index(['公司代號', '資料日期'])
         lastUpdDate = COMMON.GetDataRecord('price')
-        if len(lastUpdDate)==0 or datetime.datetime(lastUpdDate[0], lastUpdDate[1], lastUpdDate[2])<(datetime.datetime.today()-datetime.timedelta(days=2)):
+        if len(lastUpdDate)==0 or datetime.datetime(lastUpdDate[0], lastUpdDate[1], lastUpdDate[2])<(datetime.datetime.today()-datetime.datetime.timedelta(days=2)):
             get_price_crawl(StocksData, n)
         return StocksData
     else:

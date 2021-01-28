@@ -1,5 +1,5 @@
 import Public.COMMON as COMMON
-from datetime import datetime
+import datetime
 import pandas as pd
 import os
 
@@ -32,9 +32,9 @@ def crawl_comInfo(stocktype):
             comName = COMMON.col_clear(td_array[2])
             comSName = COMMON.col_clear(td_array[3])
             comType = COMMON.col_clear(td_array[4])
-            comCreateDate = datetime.strptime(
+            comCreateDate = datetime.datetime.strptime(
                 COMMON.date_RC2CE(COMMON.col_clear(td_array[14])), '%Y/%m/%d')
-            comOnDate = datetime.strptime(
+            comOnDate = datetime.datetime.strptime(
                 COMMON.date_RC2CE(COMMON.col_clear(td_array[15])), '%Y/%m/%d')
             comCapital = COMMON.col_clear(td_array[17])
             index.append(code)
@@ -60,7 +60,7 @@ def get_Dividend_crawl():
     dfComInfo = dfComInfo.append(crawl_comInfo(COMMON.__PUBLICCODE__))
 
     path = os.path.abspath('./data/')
-    dfComInfo.to_csv(f'{path}/comInfo.csv', index_label=['公司代號'])
+    dfComInfo.sort_index().to_csv(f'{path}/comInfo.csv', index_label=['公司代號'])
     COMMON.UpdateDataRecord('comInfo')
 
 
