@@ -5,6 +5,7 @@ import LoadData.financialAnalysis as financialAnalysis
 import LoadData.comprehensiveIncome as comprehensiveIncome
 import LoadData.balanceSheet as balanceSheet
 import LoadData.price as price
+import Formula.twPFScore as twPFScore
 import pandas as pd
 import datetime
 
@@ -33,6 +34,12 @@ print('Start Loading Balance Sheet...')
 dfbalanceSheet = balanceSheet.get_balanceSheet_data()
 print('Balance Sheet Loaded!')
 # 每日價格
+'''
 print('Start Loading Price...')
 dfPrice = price.get_price_data()
 print('Price Loaded!')
+'''
+#皮氏選股
+print('Start Loading PiotroskiFScore')
+dfPFScore = twPFScore.getPiotroskiFScore(dfComInfo, dfFinancialAnalysis, dfbalanceSheet, dfcomprehensiveIncome)
+print('PiotroskiFScore Loaded!')

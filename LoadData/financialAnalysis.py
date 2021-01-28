@@ -126,7 +126,6 @@ def get_FinancialAnalysis_crawl(StocksData, fromN2Now):
                     crawl_financialAnalysis(yyyy, COMMON.__EMERGINGSCODE__))
                 StocksData = StocksData.append(
                     crawl_financialAnalysis(yyyy, COMMON.__PUBLICCODE__))
-                isUpd = True
             except:
                 print(f'{yyyy}-NO DATA')
 
@@ -139,15 +138,18 @@ def get_FinancialAnalysis_crawl(StocksData, fromN2Now):
 # 讀取股利資料
 
 
-def get_FinancialAnalysis_data(n=10, reload=False):
+def get_FinancialAnalysis_data(n=6, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/financialAnalysis.csv'
     if reload != True and os.path.exists(file):
-        StocksData = pd.read_csv(file, index_col=[0, 1], dtype={'公司代號': str})
-        get_FinancialAnalysis_crawl(StocksData, n)
+        StocksData = pd.read_csv(file, dtype={'公司代號': str})
+        StocksData = StocksData.set_index(['公司代號', '所屬年度'])
+        lastUpdDate = COMMON.GetDataRecord('financialAnalysis')
+        if len(lastUpdDate)==0 or datetime.datetime(lastUpdDate[0], lastUpdDate[1], lastUpdDate[2])<datetime.datetime.today():
+            get_FinancialAnalysis_crawl(StocksData, n)
         return StocksData
     else:
-        # 預設帶出近10年
+        # 預設帶出近6年
         print('RELOAD FinancialAnalysis......')
         get_FinancialAnalysis_crawl(pd.DataFrame(), n)
         return get_FinancialAnalysis_data()

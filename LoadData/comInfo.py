@@ -68,7 +68,8 @@ def get_ComInfo_data(reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/comInfo.csv'
     if reload != True and os.path.exists(file):
-        dfComInfo = pd.read_csv(file, index_col=0, dtype={'公司代號':str})
+        dfComInfo = pd.read_csv(file, dtype={'公司代號':str})
+        dfComInfo = dfComInfo.set_index('公司代號')
         return dfComInfo
     else:
         print('RELOAD ComInfo......')

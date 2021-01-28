@@ -110,11 +110,23 @@ def UpdateDataRecord(dataType):
     else:
         dfUPDATEDATE = pd.DataFrame()
 
-    strDate = date.today().strftime("%Y/%m/%d")
+    nDate = date.today()
+    data = [nDate.year, nDate.month, nDate.day]
     if dataType in dfUPDATEDATE.index:
-        dfUPDATEDATE.loc[dataType] = strDate
+        dfUPDATEDATE.loc[dataType] = data
     else:
         dfUPDATEDATE = dfUPDATEDATE.append(
-            pd.DataFrame(data=[strDate], index=[dataType], columns=['更新日期']))
+            pd.DataFrame(data=data, index=[dataType], columns=['年', '月','日']))
 
     dfUPDATEDATE.to_csv(f'{path}/UPDATEDATE.csv', index_label=['類別'])
+
+# 取得資料更新日
+def GetDataRecord(dataType):
+    path = os.path.abspath('./data/')
+    file = f'{path}/UPDATEDATE.csv'
+    if os.path.exists(file):
+        dfUPDATEDATE = pd.read_csv(file, index_col=[0])
+        if dataType in dfUPDATEDATE.index:
+            return dfUPDATEDATE.loc[dataType]
+    return []
+

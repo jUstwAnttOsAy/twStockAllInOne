@@ -57,15 +57,18 @@ def get_Revenue_crawl(StocksData, fromN2Now):
 # 讀取營收資料
 
 
-def get_Revenue_data(n=120, reload=False):
+def get_Revenue_data(n=72, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/revenue.csv'
     if reload != True and os.path.exists(file):
-        StocksData = pd.read_csv(file, index_col=[0, 1], dtype={'公司代號': str})
-        get_Revenue_crawl(StocksData, n)
+        StocksData = pd.read_csv(file, dtype={'公司代號': str})
+        StocksData = StocksData.set_index(['公司代號', '資料年月'])
+        lastUpdDate = COMMON.GetDataRecord('revenue')
+        if len(lastUpdDate)==0 or datetime.datetime(lastUpdDate[0], lastUpdDate[1], lastUpdDate[2])<datetime.datetime.today():
+            get_Revenue_crawl(StocksData, n)
         return StocksData
     else:
-        # 預設帶出近10年
+        # 預設帶出近6年
         print('RELOAD REVENUE......')
         get_Revenue_crawl(pd.DataFrame, n)
         return get_Revenue_data()

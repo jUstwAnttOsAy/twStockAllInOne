@@ -148,15 +148,18 @@ def get_Dividend_crawl(StocksData, fromN2Now):
 
 
 # 讀取股利資料
-def get_Dividend_data(n=10, reload=False):
+def get_Dividend_data(n=6, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/dividend.csv'
     if reload != True and os.path.exists(file):
-        StocksData = pd.read_csv(file, index_col=[0, 1], dtype={'公司代號': str})
-        get_Dividend_crawl(StocksData, n)
+        StocksData = pd.read_csv(file, dtype={'公司代號': str})
+        StocksData = StocksData.set_index(['公司代號', '所屬年度'])
+        lastUpdDate = COMMON.GetDataRecord('dividend')
+        if len(lastUpdDate)==0 or datetime.datetime(lastUpdDate[0], lastUpdDate[1], lastUpdDate[2])<datetime.datetime.today():
+            get_Dividend_crawl(StocksData, n)
         return StocksData
     else:
-        # 預設帶出近10年
+        # 預設帶出近6年
         print('RELOAD DIVIDEND......')
         get_Dividend_crawl(pd.DataFrame(), n)
         return get_Dividend_data()

@@ -67,7 +67,8 @@ def get_price_crawl(StocksData, fromN2Now):
                 cnt += 1
             except:
                 print(f'{strDate}-NO DATA')
-
+        elif len(StocksData)>0 and intDate in StocksData.index.get_level_values(1):
+            cnt += 1
         currDate = currDate-oneDay
 
     if len(StocksData) > oCnt:
@@ -82,8 +83,11 @@ def get_price_data(n=60, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/price.csv'
     if reload != True and os.path.exists(file):
-        StocksData = pd.read_csv(file, index_col=[0, 1], dtype={'公司代號': str})
-        get_price_crawl(StocksData, n)
+        StocksData = pd.read_csv(file, dtype={'公司代號': str})
+        StocksData = StocksData.set_index(['公司代號', '資料日期'])
+        lastUpdDate = COMMON.GetDataRecord('price')
+        if len(lastUpdDate)==0 or datetime.datetime(lastUpdDate[0], lastUpdDate[1], lastUpdDate[2])<(datetime.datetime.today()-datetime.timedelta(days=2)):
+            get_price_crawl(StocksData, n)
         return StocksData
     else:
         # 預設帶出近n日
