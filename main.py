@@ -40,13 +40,10 @@ print('Balance Sheet Loaded!')
 print('Start Loading Price...')
 dfPrice = price.get_price_data()
 print('Price Loaded!')
-
-'''
 #皮氏選股
 print('Start Loading PiotroskiFScore')
 dfPFScore = twPFScore.getPiotroskiFScore(dfComInfo, dfFinancialAnalysis, dfbalanceSheet, dfcomprehensiveIncome)
 print('PiotroskiFScore Loaded!')
-'''
 #價值選股
 print('Start Loading ValueStockScore')
 dfValueStockScore = twValueStockScore.getValueStockScore(dfComInfo, dfFinancialAnalysis, dfRevenue, dfcomprehensiveIncome, dfPrice, dfDividend, dfbalanceSheet)
