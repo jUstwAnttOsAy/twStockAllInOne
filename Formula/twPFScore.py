@@ -1,14 +1,16 @@
 import pandas as pd
+import datetime
 import os
 
-
 def getPiotroskiFScore(dfComInfo, dfFinancialAnalysis, dfbalanceSheet, dfcomprehensiveIncome):
-    thisYYYY = dfFinancialAnalysis.index.get_level_values(1)[-1]
-    lastYYYY = thisYYYY-1
+    
     data = []
     index = []
     for code in dfComInfo.index:
         try:
+            thisYYYY = dfFinancialAnalysis.loc[(code,)].index.max()
+            lastYYYY = thisYYYY-1
+
             #1.資產報酬率(ROA)>0
             thisROA = dfFinancialAnalysis.loc[(code, thisYYYY),'資產報酬率']
             score1 = 1 if thisROA > 0 else 0
@@ -50,7 +52,7 @@ def getPiotroskiFScore(dfComInfo, dfFinancialAnalysis, dfbalanceSheet, dfcompreh
     dfPFScore = pd.DataFrame(data = data, index = pd.MultiIndex.from_tuples(index), columns=['公司簡稱', '產業類別', '今年ROA', '去年ROA', '營業現金流','稅後淨利', '今年非流動負債','去年非流動負債','今年流動比率','去年流動比率','今年毛利率','去年毛利率','今年資產周轉率', '去年資產周轉率', '皮氏分數'])
 
     path = os.path.abspath('./result/')
-
-    dfPFScore.to_csv(f'{path}/PiotroskiFScore_{thisYYYY}.csv', index_label=['公司代號', '年度'])
+    strDate = datetime.date.today().strftime('%Y%m%d')
+    dfPFScore.to_csv(f'{path}/PiotroskiFScore_{strDate}.csv', index_label=['公司代號', '年度'])
 
     return dfPFScore

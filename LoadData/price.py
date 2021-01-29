@@ -48,13 +48,13 @@ def crawl_price(date):
     return pd.DataFrame(
         data=data,
         index=pd.MultiIndex.from_tuples(dfindex),
-        columns=['成交股數', '成交筆數', '成交金額', '收盤價', '本益比(今日))'])
+        columns=['成交股數', '成交筆數', '成交金額', '收盤價', '本益比'])
 
 # 爬近60日資料並匯出csv
 
 
 def get_price_crawl(StocksData, fromN2Now):
-    oneDay = datetime.datetime.timedelta(days=1)
+    oneDay = datetime.timedelta(days=1)
     currDate = datetime.datetime.today()
     cnt = 0
     oCnt = 0 if StocksData.empty else len(StocksData)
@@ -79,16 +79,22 @@ def get_price_crawl(StocksData, fromN2Now):
 # 讀取股利資料
 
 
-def get_price_data(n=60, reload=False):
+def get_price_data(n=10, reload=False):
     path = os.path.abspath('./data/')
     file = f'{path}/price.csv'
     if reload != True and os.path.exists(file):
         StocksData = pd.read_csv(file, dtype={'公司代號': str})
         StocksData = StocksData.set_index(['公司代號', '資料日期'])
-        lastUpdDate = COMMON.GetDataRecord('price')
-        if len(lastUpdDate)==0 or datetime.datetime(lastUpdDate[0], lastUpdDate[1], lastUpdDate[2])<(datetime.datetime.today()-datetime.datetime.timedelta(days=2)):
+        arrlastUpdDate = COMMON.GetDataRecord('price')
+        today = datetime.datetime.today()
+        if len(arrlastUpdDate)==3:
+            yy,mm,dd = arrlastUpdDate
+            lastUpdDate = datetime.datetime(yy,mm,dd)
+            n = (today-lastUpdDate).days
+        if n>0:
+            print(n)
             get_price_crawl(StocksData, n)
-        return StocksData
+        return StocksData.sort_index()
     else:
         # 預設帶出近n日
         print('RELOAD Price......')

@@ -70,7 +70,7 @@ def get_ComInfo_data(reload=False):
     if reload != True and os.path.exists(file):
         dfComInfo = pd.read_csv(file, dtype={'公司代號':str})
         dfComInfo = dfComInfo.set_index('公司代號')
-        return dfComInfo
+        return dfComInfo.sort_index()
     else:
         print('RELOAD ComInfo......')
         get_Dividend_crawl()

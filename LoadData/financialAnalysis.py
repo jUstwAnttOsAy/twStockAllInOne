@@ -147,7 +147,7 @@ def get_FinancialAnalysis_data(n=6, reload=False):
         lastUpdDate = COMMON.GetDataRecord('financialAnalysis')
         if len(lastUpdDate)==0 or datetime.datetime(lastUpdDate[0], lastUpdDate[1], lastUpdDate[2])<datetime.datetime.today():
             get_FinancialAnalysis_crawl(StocksData, n)
-        return StocksData
+        return StocksData.sort_index()
     else:
         # 預設帶出近6年
         print('RELOAD FinancialAnalysis......')

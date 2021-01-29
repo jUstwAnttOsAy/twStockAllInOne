@@ -132,7 +132,7 @@ def get_comprehensiveIncome_crawl(StocksData, fromN2Now):
     for yyyy in range(syyyy, eyyyy):
         for season in (range(1, 5)):
             try:
-                StocksData.loc[slice(None), yyyy, season].head()
+                StocksData.loc[(slice(None), yyyy, season),:].head()
             except:
                 try:
                     StocksData = StocksData.append(
@@ -167,7 +167,7 @@ def get_comprehensiveIncome_data(n=6, reload=False):
         lastUpdDate = COMMON.GetDataRecord('comprehensiveIncome')
         if len(lastUpdDate)==0 or datetime.datetime(lastUpdDate[0], lastUpdDate[1], lastUpdDate[2])<datetime.datetime.today():
             get_comprehensiveIncome_crawl(StocksData, n)
-        return StocksData
+        return StocksData.sort_index()
     else:
         # 預設帶出近6年
         print('RELOAD comprehensiveIncome......')
