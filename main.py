@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import datetime
 
+'''
 # 公司基本資料
 print('Start Loading Company Info...')
 dfComInfo = comInfo.get_ComInfo_data()
@@ -48,3 +49,5 @@ print('PiotroskiFScore Loaded!')
 print('Start Loading ValueStockScore')
 dfValueStockScore = twValueStockScore.getValueStockScore(dfComInfo, dfFinancialAnalysis, dfRevenue, dfcomprehensiveIncome, dfPrice, dfDividend, dfbalanceSheet)
 print('ValueStockScore Loaded!')
+'''
+
