@@ -6,6 +6,13 @@ import os
 
 # 常數
 
+__TICKERTYPECODE__ = {
+  'LISTED':'sii',# 上市代號
+  'OTC':'otc',# 上櫃代號
+  'EMERGINGS':'rotc',# 興櫃代號
+  'PUBLIC':'pub',# 公開發行代號
+}
+
 __LISTEDCODE__ = 'sii'  # 上市代號
 __OTCCODE__ = 'otc'  # 上櫃代號
 __EMERGINGSCODE__ = 'rotc'  # 興櫃代號

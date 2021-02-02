@@ -50,4 +50,3 @@ print('Start Loading ValueStockScore')
 dfValueStockScore = twValueStockScore.getValueStockScore(dfComInfo, dfFinancialAnalysis, dfRevenue, dfcomprehensiveIncome, dfPrice, dfDividend, dfbalanceSheet)
 print('ValueStockScore Loaded!')
 '''
-
