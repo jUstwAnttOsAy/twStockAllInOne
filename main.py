@@ -1,16 +1,18 @@
-import Public.COMMON as COMMON
-import LoadData.comInfo as comInfo
-import LoadData.dividend as dividend
-import LoadData.revenue as revenue
-import LoadData.financialAnalysis as financialAnalysis
-import LoadData.comprehensiveIncome as comprehensiveIncome
-import LoadData.balanceSheet as balanceSheet
-import LoadData.price as price
-import Formula.twPFScore as twPFScore
-import Formula.twValueStockScore as twValueStockScore
+from services import stockInfo as info
+from services import mongo as db, common
 import pandas as pd
-import numpy as np
-import datetime
+import arrow
+
+db = db.MongoDB('twStockAllInOne', 'DQ')
+
+#ComInfo = info.ComInfo()
+#DQ = info.DQ()
+#REV = info.REV()
+#dfDQ = DQ.data
+#comInfo = crawl.crawl_comInfo()
+#db.InsertByDataFrame(comInfo)
+
+#df = db.Find2DataFrame({})
 
 '''
 # 公司基本資料

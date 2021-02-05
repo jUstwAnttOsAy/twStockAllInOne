@@ -52,8 +52,10 @@ def col_clear(column):
 def crawl_data2text(url, formdata, encoding='utf-8', delay=500):
     response = requests.post(url, formdata)
     response.encoding = encoding
+    result = response.text
+    response.close()
     time.sleep(float(delay/1000))
-    return response.text
+    return result
 
 # 西元年轉民國年
 

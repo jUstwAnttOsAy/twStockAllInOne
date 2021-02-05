@@ -9,36 +9,36 @@ class MongoDB:
         self.__DB = self.__client[db]
         self.__col = self.__DB[col] if col!='' else ''
 
-    def setCol(self, col):
+    def set(self, col):
         self.__col = self.__DB[col]
 
-    def InsertByDataFrame(self, df):
-        if self.Check() == False:
+    def insert(self, df):
+        if self.check() == False:
             return
         df.reset_index(inplace=True)
         data_dict = df.to_dict("records")
-        r = self.__col.insert_many({"data":data_dict})
-        return r.insertedIds
+        r = self.__col.insert_many(data_dict)
+        return r.inserted_ids
 
-    def Find2DataFrame(self, query):
-        if self.Check() == False:
+    def query(self, query = {}):
+        if self.check() == False:
             return
-        data = self.__col.find(query)
-        df = pd.DataFrame(data['data'])
+        data = self.__col.find(query, {"_id": 0})
+        df = pd.DataFrame(data)
         return df
 
-    def Del(self, query):
-        if self.Check() == False:
+    def remove(self, query = {}):
+        if self.check() == False:
             return
         r = self.__col.delete_many(query)
         return r.deleted_count
 
-    def Drop(self):
-        if self.Check() == False:
+    def drop(self):
+        if self.check() == False:
             return
         self.__col.drop()
 
-    def Check(self):
+    def check(self):
         if self.__col == '':
             print('Please Set Collection First!')
             return False
@@ -48,7 +48,6 @@ class MongoDB:
             print('Connection Failed!')
             return False
 
-        print('Connection Successed!')
         return True
 
 '''

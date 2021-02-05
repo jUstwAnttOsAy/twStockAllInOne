@@ -1,59 +1,6 @@
 import Public.COMMON as COMMON
-import arrow
 import pandas as pd
 from io import StringIO
-import os
-
-
-# 公司資訊(ComInfo)
-def crawl_comInfo_type(stocktype):
-    url = 'https://mops.twse.com.tw/mops/web/ajax_t51sb01'
-    form_data = {
-        'encodeURIComponent': 1,
-        'step': 1,
-        'firstin': 1,
-        'TYPEK': stocktype,
-        'code': '',
-    }
-
-    # 拆解內容
-    table_array = COMMON.crawl_data2text(url, form_data).split('<table')
-    tr_array = table_array[2].split('<tr')
-
-    # 拆解td
-    data, index = [], []
-    for i in range(len(tr_array)):
-        td_array = tr_array[i].split('<td')
-        if (len(td_array) > 17):
-            # 公司代號, 公司名稱, 公司簡稱, 產業類別
-            Ticker = COMMON.col_clear(td_array[1])
-            ComName = COMMON.col_clear(td_array[2])
-            Com = COMMON.col_clear(td_array[3])
-            IC = COMMON.col_clear(td_array[4])
-            ESTD = arrow.get(COMMON.date_RC2CE(COMMON.col_clear(td_array[14])))
-            LISTD = arrow.get(COMMON.date_RC2CE(COMMON.col_clear(
-                td_array[15])))
-            AoC = COMMON.col_clear(td_array[17])
-            index.append(Ticker)
-            data.append([ComName, Com, IC, ESTD, LISTD, AoC])
-
-    dfComInfo = pd.DataFrame(
-        data=data,
-        index=index,
-        columns=['ComName', 'Com', 'IC', 'ESTD', 'LISTD', 'AoC'])
-
-    return dfComInfo
-
-
-# 取得公司資料並匯出csv
-def crawl_comInfo():
-    df = pd.DataFrame()
-
-    for code in COMMON.__TICKERTYPECODE__.values():
-        df = df.append(crawl_comInfo_type(code))
-
-    return df.sort_index()
-
 
 # 彙整-股價資訊(日)(DQ)
 def crawl_DQ(date):
