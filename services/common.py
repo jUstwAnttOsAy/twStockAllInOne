@@ -1,6 +1,7 @@
 import requests
-from datetime import datetime, date
+from services import mongo as db
 import pandas as pd
+import arrow
 import time
 import os
 
@@ -97,45 +98,40 @@ def date_RC2CE(strdate):
             return nstrdate
     return strdate
 
+# 共通類別
+class Basic:
+    def __init__(self, col, indx=[]):
+        self.__db = db.MongoDB('twStockAllInOne', col)
+        self.__indx = indx
 
-# 時間扣除月份
-def minusMonth(oDate, format):
-    year = oDate.year
-    month = oDate.month-1
-    if month == 0:
-        year = year-1
-        month = 12
-    nDate = datetime(year, month, 1)
+    def load(self, condx={}):
+        df = self.__db.query(condx)
+        if df.empty:
+            if self.update(condx) == False:
+                raise Exception('update FAILED')
+            df = self.__db.query(condx)
 
-    return nDate, nDate.strftime(format)
+        if len(self.__indx) > 0:
+            df = df.set_index(self.__indx).sort_index()
 
+        return df
 
-# 更新資料日期
-def UpdateDataRecord(dataType):
-    path = os.path.abspath('./data/')
-    file = f'{path}/UPDATEDATE.csv'
-    if os.path.exists(file):
-        dfUPDATEDATE = pd.read_csv(file, index_col=[0])
-    else:
-        dfUPDATEDATE = pd.DataFrame()
+    def update(self, query={}):
+        if len(query) == 0:
+            self.__db.drop()
+        else:
+            self.__db.remove(query)
+        df = self.crawl()
 
-    nDate = date.today()
-    data = [nDate.year, nDate.month, nDate.day]
-    if dataType in dfUPDATEDATE.index:
-        dfUPDATEDATE.loc[dataType] = data
-    else:
-        dfUPDATEDATE = dfUPDATEDATE.append(
-            pd.DataFrame(data=[data], index=[dataType], columns=['年', '月','日']))
+        if df.empty:
+            return False
+        self.__db.insert(df)
 
-    dfUPDATEDATE.to_csv(f'{path}/UPDATEDATE.csv', index_label=['類別'])
+        return True
 
-# 取得資料更新日
-def GetDataRecord(dataType):
-    path = os.path.abspath('./data/')
-    file = f'{path}/UPDATEDATE.csv'
-    if os.path.exists(file):
-        dfUPDATEDATE = pd.read_csv(file, index_col=[0])
-        if dataType in dfUPDATEDATE.index:
-            return dfUPDATEDATE.loc[dataType]
-    return []
+    def clear(self):
+        self.__db.drop()
 
+    # 取得公司資料並匯出csv
+    def crawl(self):
+        raise ReferenceError('Need Method Overriding!')

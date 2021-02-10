@@ -1,47 +1,94 @@
 import pandas as pd
 import arrow
-from services import mongo as db, common
+from services import common
 from io import StringIO
 
+class Holiday(common.Basic):
+    def __init__(self, rgYears=10):
+        super().__init__('Holiday', indx=['yr'])
+        self.rgYears = rgYears
+        self.lmDate = arrow.now().shift(years=-self.rgYears)
+        self.data = pd.DataFrame()
+        self.lsDate = []
+        self.load()
 
-class Basic:
-    def __init__(self, col, indx=[]):
-        self.__db = db.MongoDB('twStockAllInOne', col)
-        self.__indx = indx
+    def load(self):
+        #load last n days data from now
+        yrlimit = int(self.lmDate.format('YYYY'))
+        query = {'yr': {'$gte': yrlimit}}
+        self.data = super().load(query)
+        self.lsDate = self.data.index.unique()
+        if yrlimit not in self.lsDate:
+            super().update(query)
+            self.data = super().load(query)
 
-    def load(self, condx={}):
-        df = self.__db.query(condx)
-        if df.empty:
-            self.update()
-            df = self.__db.query(condx)
+    def crawl(self):
+        df = self.data
+        ddate = arrow.now()
 
-        if len(self.__indx) > 0:
-            df = df.set_index(self.__indx).sort_index()
+        while self.lmDate < ddate:
+            intddate = int(ddate.format('YYYY'))
+            if intddate not in self.lsDate:
+                df = df.append(self.crawl_Holiday(ddate.year))
+            ddate = ddate.shift(years=-1)
 
-        return df
-
-    def update(self, query={}):
-        if len(query) == 0:
-            self.__db.drop()
-        else:
-            self.__db.remove(query)
-        df = self.crawl()
-
-        if df.empty:
-            return False
-        self.__db.insert(df)
-
-        return True
+        return df.sort_index()
 
     def clear(self):
-        self.__db.drop()
+        super().clear()
+        self.data = pd.DataFrame()
 
-    # 取得公司資料並匯出csv
-    def crawl(self):
-        raise ReferenceError('Need Method Overriding!')
+    def crawl_Holiday(self, year):
+        url = f'https://www.twse.com.tw/holidaySchedule/holidaySchedule?response=csv&queryYear={common.year_CE2RC(year)}'
+
+        rText = common.crawl_data2text(url, '', 'big5', delay=3000).replace('=', '').replace('\r', '').replace('"', '')
+
+        # 整理資料，變成表格
+        df = pd.read_csv(StringIO(rText),header=['名稱' in l for l in rText.split("\n")].index(True),index_col=False, names=['name', 'date', 'weekday', 'comment'], dtype={'date':str})
+        df['Closed'] = df['name'].apply(lambda x: 'E' if '農曆春節後開始交易日' in x else ('S' if '農曆春節前最後交易日' in x else ''))
+        index = []
+        lsDates = []
+        springdate = {'SDate':None,'EDate':None}
+        for i, row in df.iterrows():
+            if row['Closed']!='':
+                tmpdate = arrow.get(str(year)+'/'+row['date'].replace('月','/').replace('日', '').strip())
+                if row['Closed']=='S' and springdate['SDate'] == None:
+                    springdate['SDate'] = tmpdate
+                elif row['Closed']=='E':
+                    springdate['EDate'] = tmpdate
+            else:
+                for dd in str(row['date']).replace('月','/').split('日'):
+                    if dd!= '':
+                        try:
+                            lsDates.append(arrow.get(str(year)+'/'+dd).format('YYYYMMDD'))
+                            index.append(year)
+                        except:
+                            continue
+        
+        #spring
+        ckdate = springdate['SDate'].shift(days=1)
+        while ckdate<springdate['EDate']:
+            strDate = ckdate.format('YYYYMMDD')
+            if strDate not in lsDates:
+                lsDates.append(strDate)
+                index.append(year)
+            ckdate = ckdate.shift(days=1)
+            
+        df = pd.DataFrame(data = lsDates, index=index, columns=['date'])
+        df.index.set_names('yr', inplace = True)
+        
+        return df
+
+    def IsHoliday(self, date):
+        year = date.year
+        if year not in self.lsDate:
+            self.rgYears = (arrow.now().year - year)+1
+            self.lmDate = arrow.now().shift(years=-self.rgYears)
+            self.load()
+        return date.format('YYYYMMDD') in list(self.data.loc[year]['date'])
 
 
-class ComInfo(Basic):
+class ComInfo(common.Basic):
     def __init__(self):
         super().__init__('ComInfo', indx='Ticker')
         self.data = pd.DataFrame()
@@ -102,43 +149,67 @@ class ComInfo(Basic):
         return dfComInfo
 
 
-class DQ(Basic):
-    def __init__(self, rgDays=10):
+class DQ(common.Basic):
+    def __init__(self, ticker = '', rgDays=3):
         super().__init__('DQ', indx=['Ticker', 'Date'])
+        self.ticker = ticker
+        self.hdays = Holiday()
         self.rgDays = rgDays
+        self.dateLimit = []
+        self.get_dates()
         self.data = pd.DataFrame()
         self.lsDate = []
-        self.load()
+
+        self.tmpDate = None
+        self.low_memory_load()
+        #self.load()
+
+    def low_memory_load(self):
+        for dd in self.dateLimit:
+            self.tmpDate = dd
+            low_query = {'Date': {'$eq': dd}}
+            if self.ticker!='':
+                low_query['Ticker'] = {'$eq':self.ticker}
+            print('check', dd)
+            if super().load(low_query).empty:
+                super().update(low_query)
+        
+        query = {'Date': {'$gte': min(self.dateLimit)}}
+        if self.ticker!='':
+            query['Ticker'] = {'$eq':self.ticker}
+        self.data = super().load(query)
 
     def load(self):
         #load last n days data from now
-        dateLimit = arrow.now().shift(days=-self.rgDays).format('YYYYMMDD')
-        query = {'Date': {'$gte': dateLimit}}
+        query = {'Date': {'$gte': min(self.dateLimit)}}
+        if self.ticker!='':
+            query['Ticker'] = {'$eq':self.ticker}
         self.data = super().load(query)
         self.lsDate = self.data.index.get_level_values(1).unique()
-        if dateLimit not in self.lsDate:
+        if min(self.dateLimit) not in self.lsDate:
             super().update(query)
             self.data = super().load(query)
 
     def crawl(self):
-        weekend = [5, 6]
         df = self.data
-        ddate = arrow.now()
-        cnt = 0
-
-        while cnt < self.rgDays:
-            if ddate.weekday() not in weekend:
-                intddate = int(ddate.format('YYYYMMDD'))
-                cnt += 1
-                if intddate not in self.lsDate:
-                    try:
-                        df = df.append(self.crawl_DQ(ddate))
-                    except:
-                        print(ddate.format('YYYY/MM/DD'), 'no DQ data')
-
-            ddate = ddate.shift(days=-1)
+        if (self.tmpDate == None):
+            for ddate in self.dateLimit:
+                if ddate not in self.lsDate:
+                    df = df.append(self.crawl_DQ(ddate))
+        else:
+            df = df.append(self.crawl_DQ(self.tmpDate))
 
         return df.sort_index()
+
+    def get_dates(self):
+        weekend = [5, 6]
+        ddate = arrow.now()
+        cnt = 0
+        while cnt < self.rgDays:
+            if self.hdays.IsHoliday(ddate) == False and ddate.weekday() not in weekend:
+                self.dateLimit.append(ddate.format('YYYYMMDD'))
+                cnt += 1
+            ddate = ddate.shift(days=-1)
 
     def clear(self):
         super().clear()
@@ -154,7 +225,7 @@ class DQ(Basic):
         def asFloat(x):
             val = x.replace(',', '')
             fval, vaild = common.TryParse('float', val)
-            return fval if vaild else val
+            return fval if vaild else vaild
 
         # 整理資料，變成表格
         df = pd.read_csv(StringIO(rText),
@@ -164,6 +235,7 @@ class DQ(Basic):
                          converters={
                              '成交股數': asFloat,
                              '成交筆數': asFloat,
+                             '成交金額': asFloat,
                              '開盤價': asFloat,
                              '最高價': asFloat,
                              '最低價': asFloat,
@@ -172,7 +244,8 @@ class DQ(Basic):
                              '最後揭示買價': asFloat,
                              '最後揭示買量': asFloat,
                              '最後揭示賣價': asFloat,
-                             '最後揭示賣量': asFloat
+                             '最後揭示賣量': asFloat,
+                             '本益比': asFloat,
                          },
                          usecols=[
                              '證券代號', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價',
@@ -190,7 +263,7 @@ class DQ(Basic):
         return df.sort_index()
 
 
-class REV(Basic):
+class REV(common.Basic):
     def __init__(self, rgYears=3):
         super().__init__('REV', indx=['Ticker', 'ym'])
         self.rgYears = rgYears
@@ -236,19 +309,25 @@ class REV(Basic):
                 '累計營業收入-去年累計營收', '累計營業收入-前期比較增減(%)'
             ],
             index_col=['公司代號', '資料年月'],
+            dtype={'公司代號':str},
             converters={'資料年月': lambda x: year * 100 + month})
 
         df.columns = [
             'RevM', 'RevLM', 'RevLYM', 'RevMcLM', 'RevMcLYM', 'RevYCml',
             'RevLYCml', 'RevYCml2LYCml'
         ]
-
+                
         df.index.set_names(['Ticker', 'ym'], inplace=True)
+
+        indxTicker = df.index.get_level_values(0).astype(str)
+        indxym = df.index.get_level_values(1).astype(int)
+
+        df.index = [indxTicker, indxym]
 
         return df
 
 
-class SCI(Basic):
+class SCI(common.Basic):
     def __init__(self, rgYears=5):
         super().__init__('SCI', indx=['Ticker', 'yr', 'qtr'])
         self.rgYears = rgYears
@@ -385,7 +464,7 @@ class SCI(Basic):
 
         return dfcomprehensiveIncome
 
-class BS(Basic):
+class BS(common.Basic):
     def __init__(self, rgYears=5):
         super().__init__('BS', indx=['Ticker', 'yr', 'qtr'])
         self.rgYears = rgYears
@@ -507,8 +586,7 @@ class BS(Basic):
                         df = pd.DataFrame(data=[data],
                                           index=pd.MultiIndex.from_tuples([index]),
                                           columns=[
-                                              '資產總額', '負債總額', '權益總額', '每股參考淨值', '流動資產',
-                                              '非流動資產', '流動負債', '非流動負債'
+                                              'TA', 'TL', 'TE', 'RNper', 'CA', 'NCA', 'CL', 'NCL'
                                           ])
 
                         df.index.set_names(['Ticker', 'yr', 'qtr'], inplace=True)
@@ -517,7 +595,7 @@ class BS(Basic):
 
         return dfBS
 
-class FSA(Basic):
+class FSA(common.Basic):
     def __init__(self, rgYears=5):
         super().__init__('FSA', indx=['Ticker', 'yr'])
         self.rgYears = rgYears
@@ -657,7 +735,7 @@ class FSA(Basic):
 
         return dfFSA
 
-class DIV(Basic):
+class DIV(common.Basic):
     def __init__(self, rgYears=5):
         super().__init__('DIV', indx=['Ticker', 'yr'])
         self.rgYears = rgYears

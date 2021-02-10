@@ -449,6 +449,14 @@ version = "1.15.0"
 
 [[package]]
 category = "main"
+description = "A package to prevent exploit"
+name = "talib"
+optional = false
+python-versions = "*"
+version = "0.1.1"
+
+[[package]]
+category = "main"
 description = "URI templates"
 name = "uritemplate"
 optional = false
@@ -477,7 +485,7 @@ python-versions = ">=3.6,<4.0"
 version = "1.12.0"
 
 [metadata]
-content-hash = "06263c250a307c801249add3349cfc4e86e1b46b45e0f6c18c472d688f7cf558"
+content-hash = "8974d46c9c6c641d7ea46182ffdd28be02ca2d8ff14a9c990e090ba459516dc8"
 python-versions = "^3.8"
 
 [metadata.files]
@@ -841,6 +849,9 @@ setproctitle = [
 six = [
     {file = "six-1.15.0-py2.py3-none-any.whl", hash = "sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced"},
     {file = "six-1.15.0.tar.gz", hash = "sha256:30639c035cdb23534cd4aa2dd52c3bf48f06e5f4a941509c8bafd8ce11080259"},
+]
+talib = [
+    {file = "talib-0.1.1.tar.gz", hash = "sha256:68488af98366d64ccf1fca0049dc805f19e666fc8c1d765529e17b8d1674f087"},
 ]
 uritemplate = [
     {file = "uritemplate-3.0.1-py2.py3-none-any.whl", hash = "sha256:07620c3f3f8eed1f12600845892b0e036a2420acf513c53f7de0abd911a5894f"},
