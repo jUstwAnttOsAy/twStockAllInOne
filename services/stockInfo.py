@@ -3,6 +3,7 @@ import arrow
 from services import common
 from io import StringIO
 
+
 class Holiday(common.Basic):
     def __init__(self, rgYears=10):
         super().__init__('Holiday', indx=['yr'])
@@ -13,7 +14,7 @@ class Holiday(common.Basic):
         self.load()
 
     def load(self):
-        #load last n days data from now
+        # load last n days data from now
         yrlimit = int(self.lmDate.format('YYYY'))
         query = {'yr': {'$gte': yrlimit}}
         self.data = super().load(query)
@@ -41,42 +42,47 @@ class Holiday(common.Basic):
     def crawl_Holiday(self, year):
         url = f'https://www.twse.com.tw/holidaySchedule/holidaySchedule?response=csv&queryYear={common.year_CE2RC(year)}'
 
-        rText = common.crawl_data2text(url, '', 'big5', delay=3000).replace('=', '').replace('\r', '').replace('"', '')
+        rText = common.crawl_data2text(url, '', 'big5', delay=3000).replace(
+            '=', '').replace('\r', '').replace('"', '')
 
         # 整理資料，變成表格
-        df = pd.read_csv(StringIO(rText),header=['名稱' in l for l in rText.split("\n")].index(True),index_col=False, names=['name', 'date', 'weekday', 'comment'], dtype={'date':str})
-        df['Closed'] = df['name'].apply(lambda x: 'E' if '農曆春節後開始交易日' in x else ('S' if '農曆春節前最後交易日' in x else ''))
+        df = pd.read_csv(StringIO(rText), header=['名稱' in l for l in rText.split("\n")].index(
+            True), index_col=False, names=['name', 'date', 'weekday', 'comment'], dtype={'date': str})
+        df['Closed'] = df['name'].apply(
+            lambda x: 'E' if '農曆春節後開始交易日' in x else ('S' if '農曆春節前最後交易日' in x else ''))
         index = []
         lsDates = []
-        springdate = {'SDate':None,'EDate':None}
+        springdate = {'SDate': None, 'EDate': None}
         for i, row in df.iterrows():
-            if row['Closed']!='':
-                tmpdate = arrow.get(str(year)+'/'+row['date'].replace('月','/').replace('日', '').strip())
-                if row['Closed']=='S' and springdate['SDate'] == None:
+            if row['Closed'] != '':
+                tmpdate = arrow.get(
+                    str(year)+'/'+row['date'].replace('月', '/').replace('日', '').strip())
+                if row['Closed'] == 'S' and springdate['SDate'] == None:
                     springdate['SDate'] = tmpdate
-                elif row['Closed']=='E':
+                elif row['Closed'] == 'E':
                     springdate['EDate'] = tmpdate
             else:
-                for dd in str(row['date']).replace('月','/').split('日'):
-                    if dd!= '':
+                for dd in str(row['date']).replace('月', '/').split('日'):
+                    if dd != '':
                         try:
-                            lsDates.append(arrow.get(str(year)+'/'+dd).format('YYYYMMDD'))
+                            lsDates.append(
+                                arrow.get(str(year)+'/'+dd).format('YYYYMMDD'))
                             index.append(year)
                         except:
                             continue
-        
-        #spring
+
+        # spring
         ckdate = springdate['SDate'].shift(days=1)
-        while ckdate<springdate['EDate']:
+        while ckdate < springdate['EDate']:
             strDate = ckdate.format('YYYYMMDD')
             if strDate not in lsDates:
                 lsDates.append(strDate)
                 index.append(year)
             ckdate = ckdate.shift(days=1)
-            
-        df = pd.DataFrame(data = lsDates, index=index, columns=['date'])
-        df.index.set_names('yr', inplace = True)
-        
+
+        df = pd.DataFrame(data=lsDates, index=index, columns=['date'])
+        df.index.set_names('yr', inplace=True)
+
         return df
 
     def IsHoliday(self, date):
@@ -150,7 +156,7 @@ class ComInfo(common.Basic):
 
 
 class DQ(common.Basic):
-    def __init__(self, ticker = '', rgDays=3):
+    def __init__(self, ticker='', rgDays=3):
         super().__init__('DQ', indx=['Ticker', 'Date'])
         self.ticker = ticker
         self.hdays = Holiday()
@@ -161,29 +167,28 @@ class DQ(common.Basic):
         self.lsDate = []
 
         self.tmpDate = None
-        self.low_memory_load()
-        #self.load()
+        # self.low_memory_load()
+        self.load()
 
     def low_memory_load(self):
         for dd in self.dateLimit:
             self.tmpDate = dd
             low_query = {'Date': {'$eq': dd}}
-            if self.ticker!='':
-                low_query['Ticker'] = {'$eq':self.ticker}
-            print('check', dd)
+            if self.ticker != '':
+                low_query['Ticker'] = {'$eq': self.ticker}
             if super().load(low_query).empty:
                 super().update(low_query)
-        
+
         query = {'Date': {'$gte': min(self.dateLimit)}}
-        if self.ticker!='':
-            query['Ticker'] = {'$eq':self.ticker}
+        if self.ticker != '':
+            query['Ticker'] = {'$eq': self.ticker}
         self.data = super().load(query)
 
     def load(self):
-        #load last n days data from now
+        # load last n days data from now
         query = {'Date': {'$gte': min(self.dateLimit)}}
-        if self.ticker!='':
-            query['Ticker'] = {'$eq':self.ticker}
+        if self.ticker != '':
+            query['Ticker'] = {'$eq': self.ticker}
         self.data = super().load(query)
         self.lsDate = self.data.index.get_level_values(1).unique()
         if min(self.dateLimit) not in self.lsDate:
@@ -246,12 +251,12 @@ class DQ(common.Basic):
                              '最後揭示賣價': asFloat,
                              '最後揭示賣量': asFloat,
                              '本益比': asFloat,
-                         },
-                         usecols=[
+        },
+            usecols=[
                              '證券代號', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價',
                              '最低價', '收盤價', '漲跌(+/-)', '漲跌價差', '最後揭示買價',
                              '最後揭示買量', '最後揭示賣價', '最後揭示賣量', '本益比'
-                         ])
+        ])
 
         df.columns = [
             'Ticker', 'TVol', 'TXN', 'TV', 'OP', 'HP', 'LP', 'CP', 'Dir',
@@ -273,7 +278,7 @@ class REV(common.Basic):
         self.load()
 
     def load(self):
-        #load last n days data from now
+        # load last n days data from now
         ymlimit = int(self.lmDate.format('YYYYMM'))
         query = {'ym': {'$gte': ymlimit}}
         self.data = super().load(query)
@@ -309,14 +314,14 @@ class REV(common.Basic):
                 '累計營業收入-去年累計營收', '累計營業收入-前期比較增減(%)'
             ],
             index_col=['公司代號', '資料年月'],
-            dtype={'公司代號':str},
+            dtype={'公司代號': str},
             converters={'資料年月': lambda x: year * 100 + month})
 
         df.columns = [
             'RevM', 'RevLM', 'RevLYM', 'RevMcLM', 'RevMcLYM', 'RevYCml',
             'RevLYCml', 'RevYCml2LYCml'
         ]
-                
+
         df.index.set_names(['Ticker', 'ym'], inplace=True)
 
         indxTicker = df.index.get_level_values(0).astype(str)
@@ -337,7 +342,7 @@ class SCI(common.Basic):
         self.load()
 
     def load(self):
-        #load last n days data from now
+        # load last n days data from now
         yrlimit = int(self.lmDate.format('YYYY'))
         query = {'yr': {'$gte': yrlimit}}
         self.data = super().load(query)
@@ -458,11 +463,12 @@ class SCI(common.Basic):
 
                             df['GM'] = df['GP'] / df['Rev']
                             df.index.set_names(['Ticker', 'yr', 'qtr'],
-                                              inplace=True)
+                                               inplace=True)
                             dfcomprehensiveIncome = dfcomprehensiveIncome.append(
                                 df)
 
         return dfcomprehensiveIncome
+
 
 class BS(common.Basic):
     def __init__(self, rgYears=5):
@@ -474,7 +480,7 @@ class BS(common.Basic):
         self.load()
 
     def load(self):
-        #load last n days data from now
+        # load last n days data from now
         yrlimit = int(self.lmDate.format('YYYY'))
         query = {'yr': {'$gte': yrlimit}}
         self.data = super().load(query)
@@ -556,7 +562,7 @@ class BS(common.Basic):
                                     dtIndex[key] = thIndex
                         continue
                     td_array = tr.split('<td')
-                    if len(td_array)>1:
+                    if len(td_array) > 1:
                         #公司代號, 年, 季
                         ticker = common.col_clear(td_array[1])
                         index = (ticker, common.year_RC2CE(year), season)
@@ -584,16 +590,19 @@ class BS(common.Basic):
                         ]
 
                         df = pd.DataFrame(data=[data],
-                                          index=pd.MultiIndex.from_tuples([index]),
+                                          index=pd.MultiIndex.from_tuples(
+                                              [index]),
                                           columns=[
                                               'TA', 'TL', 'TE', 'RNper', 'CA', 'NCA', 'CL', 'NCL'
-                                          ])
+                        ])
 
-                        df.index.set_names(['Ticker', 'yr', 'qtr'], inplace=True)
+                        df.index.set_names(
+                            ['Ticker', 'yr', 'qtr'], inplace=True)
 
                         dfBS = dfBS.append(df)
 
         return dfBS
+
 
 class FSA(common.Basic):
     def __init__(self, rgYears=5):
@@ -605,7 +614,7 @@ class FSA(common.Basic):
         self.load()
 
     def load(self):
-        #load last n days data from now
+        # load last n days data from now
         yrlimit = int(self.lmDate.format('YYYY'))
         query = {'yr': {'$gte': yrlimit}}
         self.data = super().load(query)
@@ -650,7 +659,7 @@ class FSA(common.Basic):
         table_array = common.crawl_data2text(url, form_data).split('<table')
 
         dfFSA = pd.DataFrame()
-        if len(table_array) <3:
+        if len(table_array) < 3:
             return dfFSA
 
         tr_array = table_array[3].split('<tr')
@@ -660,17 +669,20 @@ class FSA(common.Basic):
                 # 公司代號
                 ticker = common.col_clear(td_array[1]).split('-')[0].strip()
                 # 負債占資產比率
-                DR, vaild = common.TryParse('float', common.col_clear(td_array[3]))
+                DR, vaild = common.TryParse(
+                    'float', common.col_clear(td_array[3]))
                 # 長期資金佔不動產廠房及設備比率
                 LER, vaild = common.TryParse('float',
-                                            common.col_clear(td_array[4]))
+                                             common.col_clear(td_array[4]))
                 # 流動比率
-                CR, vaild = common.TryParse('float', common.col_clear(td_array[5]))
+                CR, vaild = common.TryParse(
+                    'float', common.col_clear(td_array[5]))
                 # 速動比率
-                UR, vaild = common.TryParse('float', common.col_clear(td_array[6]))
+                UR, vaild = common.TryParse(
+                    'float', common.col_clear(td_array[6]))
                 # 利息保障倍數
                 IPM, vaild = common.TryParse('float',
-                                            common.col_clear(td_array[7]))
+                                             common.col_clear(td_array[7]))
                 # 應收款項周轉率
                 ARTR, vaild = common.TryParse('float',
                                               common.col_clear(td_array[8]))
@@ -679,10 +691,10 @@ class FSA(common.Basic):
                                               common.col_clear(td_array[9]))
                 # 存貨週轉率(次)
                 ITR, vaild = common.TryParse('float',
-                                            common.col_clear(td_array[10]))
+                                             common.col_clear(td_array[10]))
                 # 平均銷貨日數
                 ASD, vaild = common.TryParse('float',
-                                            common.col_clear(td_array[11]))
+                                             common.col_clear(td_array[11]))
                 # 不動產廠房及設備週轉率(次)
                 PETR, vaild = common.TryParse('float',
                                               common.col_clear(td_array[12]))
@@ -691,28 +703,28 @@ class FSA(common.Basic):
                                               common.col_clear(td_array[13]))
                 # 資產報酬率(%)
                 ROA, vaild = common.TryParse('float',
-                                            common.col_clear(td_array[14]))
+                                             common.col_clear(td_array[14]))
                 # 權益報酬率(%)
                 ROE, vaild = common.TryParse('float',
-                                            common.col_clear(td_array[15]))
+                                             common.col_clear(td_array[15]))
                 # 稅前純益佔實收資本比率(%)
                 NPBT2PCR, vaild = common.TryParse('float',
                                                   common.col_clear(td_array[16]))
                 # 純益率(%)
                 NPR, vaild = common.TryParse('float',
-                                            common.col_clear(td_array[17]))
+                                             common.col_clear(td_array[17]))
                 # 每股盈餘(元)
                 EPS, vaild = common.TryParse('float',
-                                            common.col_clear(td_array[18]))
+                                             common.col_clear(td_array[18]))
                 # 現金流量比率(%)
                 CFR, vaild = common.TryParse('float',
-                                            common.col_clear(td_array[19]))
+                                             common.col_clear(td_array[19]))
                 # 現金流量允當比率(%)
                 CFAR, vaild = common.TryParse('float',
                                               common.col_clear(td_array[20]))
                 # 現金再投資比率(%)
                 CRR, vaild = common.TryParse('float',
-                                            common.col_clear(td_array[21]))
+                                             common.col_clear(td_array[21]))
 
                 # 判斷是否有該公司當年度資料，更新/新增
                 index = (ticker, common.year_RC2CE(year))
@@ -727,13 +739,14 @@ class FSA(common.Basic):
                                       'ACCD', 'ITR', 'ASD', 'PETR', 'TATR', 'ROA',
                                       'ROE', 'NPBT2PCR', 'NPR', 'EPS', 'CFR',
                                       'CFAR', 'CRR'
-                                  ])
+                ])
 
                 df.index.set_names(['Ticker', 'yr'], inplace=True)
 
                 dfFSA = dfFSA.append(df)
 
         return dfFSA
+
 
 class DIV(common.Basic):
     def __init__(self, rgYears=5):
@@ -745,7 +758,7 @@ class DIV(common.Basic):
         self.load()
 
     def load(self):
-        #load last n days data from now
+        # load last n days data from now
         yrlimit = int(self.lmDate.format('YYYY'))
         query = {'yr': {'$gte': yrlimit}}
         self.data = super().load(query)
@@ -762,7 +775,8 @@ class DIV(common.Basic):
         while yrNow >= yrLimit:
             if yrNow not in self.lsDate:
                 for code in common.__TICKERTYPECODE__.values():
-                    df = df.append(self.crawl_DIV_type(yrNow, code)).append(self.crawl_DIV_TDR_type(yrNow, code))
+                    df = df.append(self.crawl_DIV_type(yrNow, code)).append(
+                        self.crawl_DIV_TDR_type(yrNow, code))
 
             yrNow -= 1
 
@@ -785,7 +799,7 @@ class DIV(common.Basic):
 
         # 拆解內容
         table_array = common.crawl_data2text(url, form_data,
-                                            'big5').split('<table')
+                                             'big5').split('<table')
 
         dfDIV = pd.DataFrame()
 
@@ -818,15 +832,14 @@ class DIV(common.Basic):
                             data[1] = data[1] + SD
                         else:
                             df = pd.DataFrame(data=[[CD, SD]],
-                                            index=pd.MultiIndex.from_tuples(
-                                                [index]),
-                                            columns=['CD', 'SD'])
+                                              index=pd.MultiIndex.from_tuples(
+                                [index]),
+                                columns=['CD', 'SD'])
                             df.index.set_names(['Ticker', 'yr'], inplace=True)
 
                             dfDIV = dfDIV.append(df)
 
         return dfDIV
-
 
     def crawl_DIV_TDR_type(self, year, stocktype):
         url = 'https://mops.twse.com.tw/mops/web/ajax_t66sb23'
@@ -841,7 +854,7 @@ class DIV(common.Basic):
 
         # 拆解內容
         table_array = common.crawl_data2text(url, form_data,
-                                            'big5').split('<table')
+                                             'big5').split('<table')
 
         dfDIVTDR = pd.DataFrame()
 
@@ -871,9 +884,9 @@ class DIV(common.Basic):
                             data[1] = data[1] + SD
                         else:
                             df = pd.DataFrame(data=[[CD, SD]],
-                                            index=pd.MultiIndex.from_tuples(
-                                                [index]),
-                                            columns=['CD', 'SD'])
+                                              index=pd.MultiIndex.from_tuples(
+                                [index]),
+                                columns=['CD', 'SD'])
                             df.index.set_names(['Ticker', 'yr'], inplace=True)
 
                             dfDIVTDR = dfDIVTDR.append(df)
